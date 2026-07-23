@@ -1,0 +1,21 @@
+# Compiled object files
+*.o
+*.obj
+
+# Compiled binary executables
+*.exe
+*.out
+*.a
+*.so
+*.dll
+*.dylib
+
+# Build directory
+/build/
+/bin/
+/lib/
+
+# Logs and debugging files
+*.log
+*.stackdump
+core
