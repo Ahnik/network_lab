@@ -7,5 +7,8 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    // Chunk the input file into frames
+    Frame *frame_buffer = chunk_file(argv[1]);
+
     return 0;
 }
