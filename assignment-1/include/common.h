@@ -8,6 +8,8 @@
 #define FRAME_SIZE       64        // Size of frame in bytes
 #define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
 
+#define CRC8_GENERATOR   0x07      // Generator for CRC-8
+
 #pragma pack(push, 1)
 typedef struct {
     uint8_t  sender_addr[MAC_ADDRESS_SIZE];     // Sender address
@@ -42,9 +44,9 @@ void exit_with_error(const char *fmt, ...);
 Frame *chunk_file(const char *filename);
 
 // Function to find the 16-bit checksum of a buffer
-uint16_t find_checksum(uint16_t *buffer, size_t size);
+uint16_t find_checksum(const uint16_t *buffer, size_t size);
 
 // Function to verify 16-bit checksum
-bool verify_checksum(uint16_t *buffer, size_t size, uint16_t checksum);
+bool verify_checksum(const uint16_t *buffer, size_t size, uint16_t checksum);
 
 #endif

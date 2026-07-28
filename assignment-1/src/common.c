@@ -54,7 +54,7 @@ Frame *chunk_file(const char *filename) {
     fclose(filep);
 }
 
-uint16_t find_checksum(uint16_t *buffer, size_t length) {
+uint16_t find_checksum(const uint16_t *buffer, size_t length) {
     uint16_t sum = 0;
     uint16_t carry = 0;
     uint16_t next_carry = 0;
@@ -71,7 +71,7 @@ uint16_t find_checksum(uint16_t *buffer, size_t length) {
     return ~sum;
 }
 
-bool verify_checksum(uint16_t *buffer, size_t length, uint16_t checksum) {
+bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
     uint16_t sum = 0;
     uint16_t carry = 0;
     uint16_t next_carry = 0;
@@ -90,4 +90,9 @@ bool verify_checksum(uint16_t *buffer, size_t length, uint16_t checksum) {
     sum += next_carry;
 
     return (sum == 0xFFFFu);
+}
+
+uint8_t compute_crc8(const uint8_t *buffer, uint8_t generator) {
+    uint8_t crc = 0;
+    return crc;
 }
