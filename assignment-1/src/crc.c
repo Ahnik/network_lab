@@ -1,8 +1,8 @@
 #include "crc.h"
 
 void create_crc8_table() {
-    for (uint8_t i = 0; i < CRC_TABLE_SIZE; i++) {
-        uint8_t reg = i;
+    for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint8_t reg = (uint8_t) i;
         for (int j = 0; j < 8; j++) {
             if (reg & 0x80)
                 reg = (reg << 1) ^ CRC8_GENERATOR;
@@ -11,26 +11,6 @@ void create_crc8_table() {
         }
         crc8_table[i] = reg;
     }
-}
-
-uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
-    uint8_t crc = 0;
-    for (size_t i = 0; i < size; i++) {
-        uint8_t data = crc ^ buffer[i];
-        crc = crc8_table[data];
-    }
-    return crc;
-}
-
-bool verify_crc8(const uint8_t *buffer, size_t size, uint8_t crc) {
-    uint8_t reg = 0;
-    uint8_t data;
-    for (size_t i = 0; i < size; i++) {
-        data = reg ^ buffer[i];
-        reg = crc8_table[data];
-    }
-    data = reg ^ crc;
-    return crc8_table[data] == 0;
 }
 
 void create_crc16_table() {
@@ -44,4 +24,23 @@ void create_crc16_table() {
         }
         crc16_table[i] = reg;
     }
+}
+
+uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
+    uint8_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint8_t data = crc ^ buffer[i];
+        crc = crc8_table[data];
+    }
+    return crc;
+}
+
+uint16_t compute_crc16(const uint8_t *buffer, size_t size) {
+    uint16_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint16_t byte = (uint16_t) buffer[i];
+        uint16_t data = crc ^ (byte << 8);
+        crc = crc16_table[data];
+    }
+    return crc;
 }
