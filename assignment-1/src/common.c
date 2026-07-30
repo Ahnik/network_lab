@@ -91,8 +91,3 @@ bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
 
     return (sum == 0xFFFFu);
 }
-
-uint8_t compute_crc8(const uint8_t *buffer, uint8_t generator) {
-    uint8_t crc = 0;
-    return crc;
-}

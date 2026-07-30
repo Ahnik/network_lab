@@ -48,6 +48,22 @@ uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
     return crc;
 }
 
+uint16_t compute_crc10(const uint8_t *buffer, size_t size) {
+    uint16_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint16_t byte = (uint16_t) buffer[i];
+        crc ^= byte << 2;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x0200)
+                crc = (crc << 1) ^ CRC10_GENERATOR;
+            else
+                crc <<= 1;
+        }
+    }
+    crc = crc & 0x03FF;
+    return crc;
+}
+
 uint16_t compute_crc16(const uint8_t *buffer, size_t size) {
     uint16_t crc = 0;
     for (size_t i = 0; i < size; i++) {

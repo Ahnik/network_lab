@@ -8,8 +8,6 @@
 #define FRAME_SIZE       64        // Size of frame in bytes
 #define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
 
-#define CRC8_GENERATOR   0x07      // Generator for CRC-8
-
 #pragma pack(push, 1)
 typedef struct {
     uint8_t  sender_addr[MAC_ADDRESS_SIZE];     // Sender address
@@ -22,7 +20,7 @@ typedef struct {
 #pragma pack(push, 1)
 typedef union {
     uint8_t  crc8;          // CRC-8 bits
-    uint16_t crc10;         // CRC-16 bits
+    uint16_t crc10;         // CRC-10 bits
     uint16_t crc16;         // CRC-16 bits
     uint32_t crc32;         // CRC-32 bits
     uint16_t checksum;      // Checksum bits
