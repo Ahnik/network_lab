@@ -13,15 +13,15 @@ typedef enum {
 } ErrorType;
 
 // Function to inject single-bit errors
-void inject_single_bit_error(uint8_t *buffer, size_t size);
+void inject_single_bit_error(uint8_t *buffer, unsigned int size);
 
 // Function to inject two isolated single-bit errors
-void inject_two_isolated_error(uint8_t *buffer, size_t size);
+void inject_two_isolated_error(uint8_t *buffer, unsigned int size);
 
 // Function to inject odd errors
-void inject_odd_errors(uint8_t *buffer, size_t size);
+void inject_odd_errors(uint8_t *buffer, unsigned int size);
 
 // Function to inject burst error
-void inject_burst_error(uint8_t *buffer, size_t size);
+void inject_burst_error(uint8_t *buffer, unsigned int size);
 
 #endif
