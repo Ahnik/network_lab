@@ -18,9 +18,9 @@ int main(int argc, char **argv) {
     // Chunk the input file into frames
     size_t total_frames = 0;
     Frame *frame_buffer = chunk_file(argv[1], &total_frames);
+    ErrorDetectingCode code = rand() % NUM_OF_CODES;
 
     for (size_t i = 0; i < total_frames; i++) {
-        ErrorDetectingCode code = rand() % NUM_OF_CODES;
         switch (code) {
             case CHECKSUM:
                 frame_buffer[i].trailer.checksum = htons(find_checksum(frame_buffer[i].payload, PAYLOAD_SIZE/2));
