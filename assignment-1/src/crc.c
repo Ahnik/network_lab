@@ -13,6 +13,19 @@ void create_crc8_table() {
     }
 }
 
+void create_crc10_table() {
+    for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint16_t reg = i << 2;
+        for (int j = 0; j < 8; j++) {
+            if (reg & 0x0200)
+                reg = (reg << 1) ^ CRC10_GENERATOR;
+            else
+                reg <<= 1;
+        }
+        crc10_table[i] = reg & 0x03FF;
+    }
+}
+
 void create_crc16_table() {
     for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
         uint16_t reg = i << 8;
@@ -51,14 +64,8 @@ uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
 uint16_t compute_crc10(const uint8_t *buffer, size_t size) {
     uint16_t crc = 0;
     for (size_t i = 0; i < size; i++) {
-        uint16_t byte = (uint16_t) buffer[i];
-        crc ^= byte << 2;
-        for (int j = 0; j < 8; j++) {
-            if (crc & 0x0200)
-                crc = (crc << 1) ^ CRC10_GENERATOR;
-            else
-                crc <<= 1;
-        }
+        uint8_t pos = (uint8_t) (crc >> 2) ^ buffer[i];
+        crc = (crc << 8) ^ crc10_table[pos];
     }
     crc = crc & 0x03FF;
     return crc;

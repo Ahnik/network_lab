@@ -34,6 +34,9 @@ void create_crc32_table();
 // Function to compute CRC-8 of a buffer
 uint8_t compute_crc8(const uint8_t *buffer, size_t size);
 
+// Function to compute CRC-10 of a buffer
+uint16_t compute_crc10(const uint8_t *buffer, size_t size);
+
 // Function to compute CRC-16 of a buffer
 uint16_t compute_crc16(const uint8_t *buffer, size_t size);
 
