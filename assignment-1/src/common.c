@@ -71,6 +71,7 @@ uint16_t find_checksum(const uint16_t *buffer, size_t length) {
     return ~sum;
 }
 
+/* TODO: Improve verify_checksum() function by using the find_checksum() function within it */
 bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
     uint16_t sum = 0;
     uint16_t carry = 0;
