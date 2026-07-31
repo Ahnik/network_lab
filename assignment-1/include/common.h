@@ -29,17 +29,19 @@ typedef union {
 
 #define PAYLOAD_SIZE (FRAME_SIZE - sizeof(Header) - sizeof(Trailer))
 
+#pragma pack(push, 1)
 typedef struct {
     Header header;
     uint8_t payload[PAYLOAD_SIZE];  // The actual payload buffer
     Trailer trailer;
 } Frame;
+#pragma push
 
 // Function to terminate the program in case of an error and print it
 void exit_with_error(const char *fmt, ...);
 
 // Function to open a file, read it, chunk it into packets and return the first packet
-Frame *chunk_file(const char *filename);
+Frame *chunk_file(const char *filename, size_t *num_of_frames);
 
 // Function to find the 16-bit checksum of a buffer
 uint16_t find_checksum(const uint16_t *buffer, size_t size);

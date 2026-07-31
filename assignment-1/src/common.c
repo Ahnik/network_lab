@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 void exit_with_error(const char *fmt, ...) {
     int errno_save = errno;
@@ -23,7 +24,7 @@ void exit_with_error(const char *fmt, ...) {
     exit(1);
 }
 
-Frame *chunk_file(const char *filename) {
+Frame *chunk_file(const char *filename, size_t *num_of_frames) {
     FILE *filep = fopen(filename, "rb");
     if (filep == NULL)
         exit_with_error("Unable to open file!");
@@ -52,6 +53,8 @@ Frame *chunk_file(const char *filename) {
     }
 
     fclose(filep);
+    *num_of_frames = (size_t) total_frames;
+    return frame_buffer;
 }
 
 uint16_t find_checksum(const uint16_t *buffer, size_t length) {
@@ -61,9 +64,9 @@ uint16_t find_checksum(const uint16_t *buffer, size_t length) {
 
     for (size_t i = 0; i < length; i++) {
         next_carry = 0;
-        if (sum > UINT16_MAX - buffer[i] - carry)
+        if (sum > UINT16_MAX - htons(buffer[i]) - carry)
             next_carry = 1;
-        sum += buffer[i] + carry;
+        sum += htons(buffer[i]) + carry;
         carry = next_carry;
     }
     sum += carry;
@@ -72,6 +75,7 @@ uint16_t find_checksum(const uint16_t *buffer, size_t length) {
 }
 
 /* TODO: Improve verify_checksum() function by using the find_checksum() function within it */
+/* This function may not be needed. */
 bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
     uint16_t sum = 0;
     uint16_t carry = 0;
@@ -79,9 +83,9 @@ bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
 
     for (size_t i = 0; i < length; i++) {
         next_carry = 0;
-        if (sum > UINT16_MAX - buffer[i] - carry)
+        if (sum > UINT16_MAX - htons(buffer[i]) - carry)
             next_carry = 1;
-        sum += buffer[i] + carry;
+        sum += htons(buffer[i]) + carry;
         carry = next_carry;
     }
     next_carry = 0;
@@ -90,5 +94,5 @@ bool verify_checksum(const uint16_t *buffer, size_t length, uint16_t checksum) {
     sum += checksum + carry;
     sum += next_carry;
 
-    return (sum == 0xFFFFu);
+    return (sum == 0xFFFF);
 }

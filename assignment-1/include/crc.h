@@ -13,6 +13,16 @@
 #define CRC16_GENERATOR 0x1021
 #define CRC32_GENERATOR 0x04C11DB7
 
+// Enumerate all error-detecting codes supported
+typedef enum {
+    CHECKSUM = 0,
+    CRC8,
+    CRC10,
+    CRC16,
+    CRC32,
+    NUM_OF_CODES,
+} ErrorDetectingCode;
+
 // Lookup tables for calculating CRC
 static uint8_t  crc8_table[CRC_TABLE_SIZE];
 static uint16_t crc10_table[CRC_TABLE_SIZE];

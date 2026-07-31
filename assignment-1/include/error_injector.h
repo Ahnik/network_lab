@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "common.h"
 
+// Enumerate all types of errors supported
 typedef enum {
     SINGLE_BIT = 0,
     TWO_ISOLATED,
