@@ -53,6 +53,7 @@ void create_crc32_table() {
 }
 
 uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
     uint8_t crc = 0;
     for (size_t i = 0; i < size; i++) {
         uint8_t pos = crc ^ buffer[i];
@@ -62,6 +63,7 @@ uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
 }
 
 uint16_t compute_crc10(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
     uint16_t crc = 0;
     for (size_t i = 0; i < size; i++) {
         uint8_t pos = (uint8_t) (crc >> 2) ^ buffer[i];
@@ -72,6 +74,7 @@ uint16_t compute_crc10(const uint8_t *buffer, size_t size) {
 }
 
 uint16_t compute_crc16(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
     uint16_t crc = 0;
     for (size_t i = 0; i < size; i++) {
         uint8_t pos = (uint8_t) (crc >> 8) ^ buffer[i];
@@ -81,6 +84,7 @@ uint16_t compute_crc16(const uint8_t *buffer, size_t size) {
 }
 
 uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
     uint32_t crc = 0;
     for (size_t i = 0; i < size; i++) {
         uint8_t pos = (uint8_t) (crc >> 24) ^ buffer[i];
