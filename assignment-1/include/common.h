@@ -5,6 +5,8 @@
 #include <limits.h>
 #include <stdbool.h>
 
+#define RECEIVER_PORT  8989
+
 #define FRAME_SIZE       64        // Size of frame in bytes
 #define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
 
