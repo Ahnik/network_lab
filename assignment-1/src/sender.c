@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include "common.h"
@@ -40,10 +41,10 @@ int main(int argc, char **argv) {
     srand((unsigned int) time(NULL));
 
     // Chunk the input file into frames
-    size_t total_frames = 0;
+    uint32_t total_frames = 0;
     Frame *frame_buffer = chunk_file(argv[3], &total_frames);
 
-    for (size_t i = 0; i < total_frames; i++) {
+    for (uint32_t i = 0; i < total_frames; i++) {
         input_mac_address(&frame_buffer[i]);
         frame_buffer[i].header.type = htons(code);
         switch (code) {
@@ -74,8 +75,8 @@ int main(int argc, char **argv) {
 
     // Inject an error
     ErrorType error;
-    for (size_t i = 0; i < total_frames; i++) {
-        printf("--- FRAME #%zu ---\n", i+1);
+    for (uint32_t i = 0; i < total_frames; i++) {
+        printf("--- FRAME #%u ---\n", i+1);
         error = rand() % ERROR_NUM;
         switch (error) {
             case SINGLE_BIT:
@@ -111,16 +112,27 @@ int main(int argc, char **argv) {
     receiver_addr.sin_port   = htons(RECEIVER_PORT);
 
     if (inet_pton(AF_INET, argv[2], &receiver_addr.sin_addr) <= 0)
-        exit_with_error("inet_pton error for %s", argv[1]);
+        exit_with_error("inet_pton error for %s!", argv[1]);
 
     // Try to connect to the receiver
     if (connect(receiver_socket, (struct sockaddr *) &receiver_addr, (socklen_t) sizeof(receiver_addr)) < 0)
         exit_with_error("Connection failed!");
 
-    // Sending the total message to the receiver
+    // Send the header containing total number of frames in the message
+    uint32_t net_length = htonl(total_frames);
+    uint8_t *buffer_ptr = (uint8_t *) &net_length;
     ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < HEADER_SIZE) {
+        ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, HEADER_SIZE - total_bytes_sent, 0);
+        if (bytes_sent < 0)
+            exit_with_error("Send Failed!");
+        total_bytes_sent += bytes_sent;
+    }
+
+    // Sending the total message to the receiver
+    total_bytes_sent = 0;
     ssize_t total_size = total_frames * FRAME_SIZE;
-    uint8_t *buffer_ptr = (uint8_t *) frame_buffer;
+    buffer_ptr = (uint8_t *) frame_buffer;
     while (total_bytes_sent < total_size) {
         ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, total_size - total_bytes_sent, 0);
         if (bytes_sent < 0)
@@ -128,6 +140,13 @@ int main(int argc, char **argv) {
         total_bytes_sent += bytes_sent;
     }
     close(receiver_socket);
+    free(frame_buffer);
+
+    /* Testing */
+    // for (size_t i = 0; i < total_size; i++) {
+    //     printf("%x ", buffer_ptr[i]);
+    // }
+    // printf("\n");
 
     return 0;
 }

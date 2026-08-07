@@ -41,7 +41,23 @@ void input_mac_address(Frame *frame) {
     frame->header.receiver_addr[5] = 0x7a;
 }
 
-Frame *chunk_file(const char *filename, size_t *num_of_frames) {
+uint32_t read_payload_len(int sockfd){
+    if(sockfd < 0) return 0;
+    uint32_t *len_buf = (uint32_t *)calloc(1, sizeof(*len_buf));
+    if(!len_buf) return 0;
+    ssize_t bytesWritten = 0;
+    while(bytesWritten < HEADER_SIZE){
+        ssize_t bytesReceived = recv(sockfd, len_buf + bytesWritten, HEADER_SIZE - bytesWritten, 0);
+        if(bytesReceived < 0)       return UINT32_MAX;
+        else if(bytesReceived == 0) return 0;
+        bytesWritten += bytesReceived;
+    }
+    uint32_t length = ntohl(*len_buf);
+    free(len_buf);
+    return length;
+}
+
+Frame *chunk_file(const char *filename, uint32_t *num_of_frames) {
     FILE *filep = fopen(filename, "rb");
     if (filep == NULL)
         exit_with_error("Unable to open file!");
@@ -63,7 +79,7 @@ Frame *chunk_file(const char *filename, size_t *num_of_frames) {
 
     memset(frame_buffer, 0, FRAME_SIZE);
 
-    for (int i = 0; i <= total_frames; i++) {
+    for (int i = 0; i < total_frames; i++) {
         frame_buffer[i].header.length = fread(frame_buffer[i].payload, sizeof(uint8_t), PAYLOAD_SIZE, filep);
         if (ferror(filep) != 0)
             exit_with_error("File read error!");

@@ -17,5 +17,9 @@
 
 # Logs and debugging files
 *.log
+/logs/
 *.stackdump
 core
+
+# Test directory
+/tests/

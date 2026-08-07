@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -39,66 +40,76 @@ int main() {
     if (listen(receiver_socket, 1) < 0)
         exit_with_error("Listen Failed!");
 
-    printf("Waiting for connection...\n");
     int sender_socket;
     struct sockaddr_in sender_addr;
     socklen_t addr_size = (socklen_t) sizeof(sender_addr);
-
-    // Accept connection from sender
-    if ((sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_addr, &addr_size)) < 0)
-        exit_with_error("Accept Failed!");
-
-    Frame frame;
-    size_t frame_no = 1;
     while (true) {
-        uint8_t *buffer_ptr = (uint8_t *) &frame;
-        ssize_t total_bytes_read = 0;
-        while (total_bytes_read < FRAME_SIZE) {
-            ssize_t bytes_read = recv(sender_socket, buffer_ptr + total_bytes_read, FRAME_SIZE - total_bytes_read, 0);
-            if (bytes_read < 0)
-                exit_with_error("recv failed!");
-            total_bytes_read += bytes_read;
-        }
+        printf("Waiting for connection...\n");
 
-        /* TODO: Check what error detection scheme is used */
-        printf("--- FRAME #%zu ---\n", frame_no);
-        printf("Payload extracted : %hu bytes\n", frame.header.length);
-        uint16_t code = ntohs(frame.header.type);
-        printf("%s : ", code_to_string(code));
-        switch (code) {
-            case CHECKSUM:
-                if (find_checksum((uint16_t *) frame.payload, (PAYLOAD_SIZE+2)/2) == 0)
-                    printf("VALID\n");
-                else
+        // Accept connection from sender
+        if ((sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_addr, &addr_size)) < 0)
+            exit_with_error("Accept Failed!");
+
+        // Receive the header containing number of frames in the message
+        uint32_t total_frames = read_payload_len(sender_socket);
+
+        Frame *frame_buffer = (Frame *) calloc(total_frames, sizeof(Frame));
+        if (frame_buffer == NULL)
+            exit_with_error("Memory allocation error!");
+
+        for (uint32_t i = 0; i < total_frames; i++) {
+            uint8_t *frame_ptr = (uint8_t *) &frame_buffer[i];
+            ssize_t total_bytes_read = 0;
+            while (total_bytes_read < FRAME_SIZE) {
+                ssize_t bytes_read = recv(sender_socket, frame_ptr + total_bytes_read, FRAME_SIZE - total_bytes_read, 0);
+                if (bytes_read <= 0)
+                    exit_with_error("recv failed!");
+                total_bytes_read += bytes_read;
+            }
+
+            /* TODO: Check what error detection scheme is used */
+            printf("--- FRAME #%u ---\n", i+1);
+            printf("Payload extracted : %hu bytes\n", frame_buffer[i].header.length);
+            uint16_t code = ntohs(frame_buffer[i].header.type);
+            printf("%s : ", code_to_string(code));
+            switch (code) {
+                case CHECKSUM:
+                    if (find_checksum((uint16_t *) frame_buffer[i].payload, (PAYLOAD_SIZE+2)/2) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC8:
+                    if (compute_crc8(frame_buffer[i].payload, PAYLOAD_SIZE+1) == 0) 
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC10:
+                    if (compute_crc10(frame_buffer[i].payload, PAYLOAD_SIZE+2) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC16:
+                    if (compute_crc16(frame_buffer[i].payload, PAYLOAD_SIZE+2) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC32:
+                    if (compute_crc32(frame_buffer[i].payload, PAYLOAD_SIZE+4) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                default:
                     printf("CORRUPTED\n");
-                break;
-            case CRC8:
-                if (compute_crc8(frame.payload, PAYLOAD_SIZE+1) == 0) 
-                    printf("VALID\n");
-                else
-                    printf("CORRUPTED\n");
-                break;
-            case CRC10:
-                if (compute_crc10(frame.payload, PAYLOAD_SIZE+2) == 0)
-                    printf("VALID\n");
-                else
-                    printf("CORRUPTED\n");
-                break;
-            case CRC16:
-                if (compute_crc16(frame.payload, PAYLOAD_SIZE+2) == 0)
-                    printf("VALID\n");
-                else
-                    printf("CORRUPTED\n");
-                break;
-            case CRC32:
-                if (compute_crc32(frame.payload, PAYLOAD_SIZE+4) == 0)
-                    printf("VALID\n");
-                else
-                    printf("CORRUPTED\n");
-                break;
-            default:
+            }
         }
-        frame_no++;
+        close(sender_socket);
+        free(frame_buffer);
+        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     }
 
     return 0;
