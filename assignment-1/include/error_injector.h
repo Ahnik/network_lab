@@ -10,6 +10,7 @@ typedef enum {
     TWO_ISOLATED,
     ODD_ERRORS,
     BURST,
+    NO_ERROR,
     ERROR_NUM,
 } ErrorType;
 

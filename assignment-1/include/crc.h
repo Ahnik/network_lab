@@ -29,6 +29,12 @@ static uint16_t crc10_table[CRC_TABLE_SIZE];
 static uint16_t crc16_table[CRC_TABLE_SIZE];
 static uint32_t crc32_table[CRC_TABLE_SIZE];
 
+// Map CRC input strings to enumerator
+ErrorDetectingCode string_to_code(const char *str);
+
+// Map CRC enumerator to CRC string
+const char *code_to_string(ErrorDetectingCode code);
+
 // Function to create the CRC-8 lookup table
 void create_crc8_table();
 

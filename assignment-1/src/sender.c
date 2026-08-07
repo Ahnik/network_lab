@@ -9,9 +9,31 @@
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    if (argc < 2) {
+    /* argv[1] = Error detection code, argv[2] = IP address, argv[3] = file */
+    if (argc < 4) {
         printf("Usage: ./main.out <filename>\n");
         return -1;
+    }
+
+    ErrorDetectingCode code = string_to_code(argv[1]);
+    if (code == NUM_OF_CODES) {
+        printf("Invalid error detection code!\n");
+        return -1;
+    }
+
+    // Create CRC lookup table
+    switch (code) {
+        case CRC8:
+            create_crc8_table();
+            break;
+        case CRC10:
+            create_crc10_table();
+            break;
+        case CRC16:
+            create_crc16_table();
+            break;
+        case CRC32:
+            create_crc32_table();
     }
 
     // Seed the random number generator
@@ -19,13 +41,14 @@ int main(int argc, char **argv) {
 
     // Chunk the input file into frames
     size_t total_frames = 0;
-    Frame *frame_buffer = chunk_file(argv[1], &total_frames);
-    ErrorDetectingCode code = rand() % NUM_OF_CODES;
+    Frame *frame_buffer = chunk_file(argv[3], &total_frames);
 
     for (size_t i = 0; i < total_frames; i++) {
+        input_mac_address(&frame_buffer[i]);
+        frame_buffer[i].header.type = htons(code);
         switch (code) {
             case CHECKSUM:
-                frame_buffer[i].trailer.checksum = htons(find_checksum(frame_buffer[i].payload, PAYLOAD_SIZE/2));
+                frame_buffer[i].trailer.checksum = htons(find_checksum((uint16_t *) frame_buffer[i].payload, PAYLOAD_SIZE/2));
                 break;
             case CRC8:
                 frame_buffer[i].trailer.crc[0] = compute_crc8(frame_buffer[i].payload, PAYLOAD_SIZE);
@@ -46,27 +69,33 @@ int main(int argc, char **argv) {
                 frame_buffer[i].trailer.crc[1] = (uint8_t) (crc32 >> 16);
                 frame_buffer[i].trailer.crc[2] = (uint8_t) (crc32 >> 8);
                 frame_buffer[i].trailer.crc[3] = (uint8_t) (crc32);
-                break;
         }
     }
 
     // Inject an error
     ErrorType error;
-    for (int i = 0; i < total_frames; i++) {
+    for (size_t i = 0; i < total_frames; i++) {
+        printf("--- FRAME #%zu ---\n", i+1);
         error = rand() % ERROR_NUM;
         switch (error) {
             case SINGLE_BIT:
                 inject_single_bit_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                printf("Single bit error injected!\n");
                 break;
             case TWO_ISOLATED:
                 inject_two_isolated_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                printf("Two isolated single bit errors injected!\n");
                 break;
             case ODD_ERRORS:
                 inject_odd_errors((uint8_t *) frame_buffer, FRAME_SIZE);
+                printf("Odd errors injected!\n");
                 break;
             case BURST:
                 inject_burst_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                printf("Burst error injected!\n");
                 break;
+            case NO_ERROR:
+                printf("No error injected!\n");
         }
     }
 
@@ -81,7 +110,7 @@ int main(int argc, char **argv) {
     receiver_addr.sin_family = AF_INET;
     receiver_addr.sin_port   = htons(RECEIVER_PORT);
 
-    if (inet_pton(AF_INET, argv[1], &receiver_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, argv[2], &receiver_addr.sin_addr) <= 0)
         exit_with_error("inet_pton error for %s", argv[1]);
 
     // Try to connect to the receiver
@@ -98,6 +127,7 @@ int main(int argc, char **argv) {
             exit_with_error("Send Failed!");
         total_bytes_sent += bytes_sent;
     }
+    close(receiver_socket);
 
     return 0;
 }

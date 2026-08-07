@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 
 void exit_with_error(const char *fmt, ...) {
     int errno_save = errno;
@@ -22,6 +23,22 @@ void exit_with_error(const char *fmt, ...) {
     va_end(ap);
 
     exit(1);
+}
+
+void input_mac_address(Frame *frame) {
+    frame->header.sender_addr[0] = 0x70;
+    frame->header.sender_addr[1] = 0x08;
+    frame->header.sender_addr[2] = 0x94;
+    frame->header.sender_addr[3] = 0x4a;
+    frame->header.sender_addr[4] = 0x44;
+    frame->header.sender_addr[5] = 0x1d;
+
+    frame->header.receiver_addr[0] = 0xfe;
+    frame->header.receiver_addr[1] = 0x80;
+    frame->header.receiver_addr[2] = 0xde;
+    frame->header.receiver_addr[3] = 0x3b;
+    frame->header.receiver_addr[4] = 0xec;
+    frame->header.receiver_addr[5] = 0x7a;
 }
 
 Frame *chunk_file(const char *filename, size_t *num_of_frames) {

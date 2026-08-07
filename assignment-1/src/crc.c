@@ -1,4 +1,31 @@
 #include "crc.h"
+#include <string.h>
+
+ErrorDetectingCode string_to_code(const char *str) {
+    if      (strncmp(str, "CHECKSUM", strlen("CHECKSUM")) == 0) return CHECKSUM;
+    else if (strncmp(str, "CRC8", strlen("CRC8")) == 0)         return CRC8;
+    else if (strncmp(str, "CRC10", strlen("CRC10")) == 0)       return CRC10;
+    else if (strncmp(str, "CRC16", strlen("CRC16")) == 0)       return CRC16;
+    else if (strncmp(str, "CRC32", strlen("CRC32")) == 0)       return CRC32;
+    else return NUM_OF_CODES;
+}
+
+const char *code_to_string(ErrorDetectingCode code) {
+    switch (code) {
+        case CHECKSUM:
+            return "CHECKSUM";
+        case CRC8:
+            return "CRC8";
+        case CRC10:
+            return "CRC10";
+        case CRC16:
+            return "CRC16";
+        case CRC32:
+            return "CRC32";
+        default:
+            return "???";
+    }
+}
 
 void create_crc8_table() {
     for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {

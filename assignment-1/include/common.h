@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 #define RECEIVER_PORT  8989
@@ -39,10 +40,13 @@ typedef struct {
     uint8_t payload[PAYLOAD_SIZE];  // The actual payload buffer
     Trailer trailer;
 } Frame;
-#pragma push
+#pragma pack(pop)
 
 // Function to terminate the program in case of an error and print it
 void exit_with_error(const char *fmt, ...);
+
+// Fill up the sender and receiver MAC addresses with dummy data
+void input_mac_address(Frame *frame);
 
 // Function to open a file, read it, chunk it into packets and return the first packet
 Frame *chunk_file(const char *filename, size_t *num_of_frames);
