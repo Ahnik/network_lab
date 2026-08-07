@@ -80,19 +80,19 @@ int main(int argc, char **argv) {
         error = rand() % ERROR_NUM;
         switch (error) {
             case SINGLE_BIT:
-                inject_single_bit_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
                 printf("Single bit error injected!\n");
                 break;
             case TWO_ISOLATED:
-                inject_two_isolated_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                inject_two_isolated_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
                 printf("Two isolated single bit errors injected!\n");
                 break;
             case ODD_ERRORS:
-                inject_odd_errors((uint8_t *) frame_buffer, FRAME_SIZE);
+                inject_odd_errors((uint8_t *) &frame_buffer[i], FRAME_SIZE);
                 printf("Odd errors injected!\n");
                 break;
             case BURST:
-                inject_burst_error((uint8_t *) frame_buffer, FRAME_SIZE);
+                inject_burst_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
                 printf("Burst error injected!\n");
                 break;
             case NO_ERROR:
@@ -141,12 +141,6 @@ int main(int argc, char **argv) {
     }
     close(receiver_socket);
     free(frame_buffer);
-
-    /* Testing */
-    // for (size_t i = 0; i < total_size; i++) {
-    //     printf("%x ", buffer_ptr[i]);
-    // }
-    // printf("\n");
 
     return 0;
 }
