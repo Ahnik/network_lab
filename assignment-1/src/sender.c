@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +17,17 @@ int main(int argc, char **argv) {
         printf("Usage: ./main.out <filename>\n");
         return -1;
     }
+
+#ifdef BENCHMARK
+    struct timespec start, end;
+    long seconds, nanoseconds;
+    long long total_ns;
+    double total_ms;
+    char print_buffer[PRINT_BUFFER_SIZE];
+    size_t msg_size;
+    memset(print_buffer, 0, PRINT_BUFFER_SIZE);
+    clock_gettime(CLOCK_MONOTONIC, &start);
+#endif
 
     ErrorDetectingCode code = string_to_code(argv[1]);
     if (code == NUM_OF_CODES) {
@@ -44,9 +57,16 @@ int main(int argc, char **argv) {
     uint32_t total_frames = 0;
     Frame *frame_buffer = chunk_file(argv[3], &total_frames);
 
+#ifdef BENCHMARK
+    double average_time_ms;
+    struct timespec begin_compute, end_compute;
+    clock_gettime(CLOCK_MONOTONIC, &begin_compute);
+#endif
+
     for (uint32_t i = 0; i < total_frames; i++) {
         input_mac_address(&frame_buffer[i]);
         frame_buffer[i].header.type = htons(code);
+
         switch (code) {
             case CHECKSUM:
                 frame_buffer[i].trailer.checksum = htons(find_checksum((uint16_t *) &frame_buffer[i], (FRAME_SIZE - sizeof(Trailer)) >> 1));
@@ -72,6 +92,23 @@ int main(int argc, char **argv) {
                 frame_buffer[i].trailer.crc[3] = (uint8_t) (crc32);
         }
     }
+#ifdef BENCHMARK
+    clock_gettime(CLOCK_MONOTONIC, &end_compute);
+    seconds = end_compute.tv_sec - begin_compute.tv_sec;
+    nanoseconds = end_compute.tv_nsec - begin_compute.tv_nsec;
+
+    if (nanoseconds < 0) {
+        seconds--;
+        nanoseconds += 1000000000L;
+    }
+    total_ns = (seconds * 1000000000LL) + nanoseconds;
+    total_ms = (double) total_ns / 1000000.0;
+    average_time_ms = total_ms / total_frames;
+    snprintf(print_buffer, PRINT_BUFFER_SIZE, "Average time to compute %s of frame", code_to_string(code));
+    print_buffer[PRINT_BUFFER_SIZE-1] = 0;
+    msg_size = strlen(print_buffer);
+    fprintf(stderr, "%s : %.6f ms\n", print_buffer, average_time_ms);
+#endif
 
     // Inject an error
     ErrorType error;
@@ -141,6 +178,30 @@ int main(int argc, char **argv) {
     }
     close(receiver_socket);
     free(frame_buffer);
+
+#ifdef BENCHMARK
+    // Record the end time
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    nanoseconds = end.tv_nsec - start.tv_nsec;
+    seconds = end.tv_sec - start.tv_sec;
+
+    if (nanoseconds < 0) {
+        seconds--;
+        nanoseconds += 1000000000L;
+    }
+
+    total_ns = (seconds * 1000000000LL) + nanoseconds;
+    total_ms = (double) total_ns / 1000000.0;
+    memset(print_buffer, PRINT_BUFFER_SIZE, 0);
+    snprintf(print_buffer, PRINT_BUFFER_SIZE, "Execution time");
+    size_t curr_size = strlen(print_buffer);
+    if (msg_size > curr_size) {
+        memset(&print_buffer[curr_size], ' ', msg_size - curr_size);
+        print_buffer[msg_size] = 0;
+    }
+    print_buffer[PRINT_BUFFER_SIZE-1] = 0;
+    fprintf(stderr, "%s : %.6f ms\n", print_buffer, total_ms);
+#endif
 
     return 0;
 }

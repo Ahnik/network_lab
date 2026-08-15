@@ -11,9 +11,9 @@
 *.dylib
 
 # Build directory
-/build/
-/bin/
-/lib/
+**/build/
+**/bin/
+**/lib/
 
 # Logs and debugging files
 *.log
@@ -21,5 +21,5 @@
 *.stackdump
 core
 
-# Test directory
-/tests/
+# Tests and results directory
+**/results/
