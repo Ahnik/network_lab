@@ -24,11 +24,6 @@ typedef struct {
 #pragma pack(push, 1)
 typedef union {
     uint8_t crc[4];         // CRC bits
-    /* The below commented section may be removed. */
-    // uint8_t  crc8;          // CRC-8 bits
-    // uint16_t crc10;         // CRC-10 bits
-    // uint16_t crc16;         // CRC-16 bits
-    // uint32_t crc32;         // CRC-32 bits
     uint16_t checksum;      // Checksum bits
 } Trailer;
 #pragma pack(pop)

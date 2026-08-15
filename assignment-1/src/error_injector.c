@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "error_injector.h"
+#include "crc.h"
 
 void inject_single_bit_error(uint8_t *buffer, unsigned int size) {
     unsigned int pos = rand() % (size << 3);
@@ -40,4 +41,32 @@ void flip_two_words(uint16_t *buffer, unsigned int size) {
     uint16_t temp = buffer[pos1];
     buffer[pos1] = buffer[pos2];
     buffer[pos2] = temp;
+}
+
+void inject_crc8_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 1);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= CRC8_GENERATOR;
+}
+
+void inject_crc10_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 2);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC10_GENERATOR >> 2);
+    buffer[pos+2] ^= (uint8_t) (CRC10_GENERATOR << 6);
+}
+
+void inject_crc16_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 2);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC16_GENERATOR >> 8);
+    buffer[pos+2] ^= (uint8_t) (CRC16_GENERATOR);
+}
+void inject_crc32_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 4);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC32_GENERATOR >> 24);
+    buffer[pos+2] ^= (uint8_t) (CRC32_GENERATOR >> 16);
+    buffer[pos+3] ^= (uint8_t) (CRC32_GENERATOR >> 8);
+    buffer[pos+4] ^= (uint8_t) (CRC32_GENERATOR);
 }

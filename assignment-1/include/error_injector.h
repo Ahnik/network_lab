@@ -29,4 +29,16 @@ void inject_burst_error(uint8_t *buffer, unsigned int size);
 // Function to flip two 16-bit words
 void flip_two_words(uint16_t *buffer, unsigned int size);
 
+// Function to inject error into the file that will be missed by CRC-8
+void inject_crc8_proof_error(uint8_t *buffer, unsigned int size);
+
+// Function to inject error into the file that will be missed by CRC-10
+void inject_crc10_proof_error(uint8_t *buffer, unsigned int size);
+
+// Function to inject error into the file that will be missed by CRC-16
+void inject_crc16_proof_error(uint8_t *buffer, unsigned int size);
+
+// Function to inject error into the file that will be missed by CRC-32
+void inject_crc32_proof_error(uint8_t *buffer, unsigned int size);
+
 #endif

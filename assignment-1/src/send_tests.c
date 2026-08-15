@@ -76,12 +76,27 @@ int main(int argc, char **argv) {
     // Inject an error
     ErrorType error;
     for (uint32_t i = 0; i < total_frames; i++) {
-        printf("--- FRAME #%u ---\n", i+1);
         switch (i % 3) {
             case 0:
                 inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
                 break;
             case 1:
+                switch (code) {
+                    case CRC8:
+                        inject_crc8_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC10:
+                        inject_crc10_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC16:
+                        inject_crc16_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC32:
+                        inject_crc32_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    default:
+                        inject_crc8_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                }
                 break;
             case 2:
                 flip_two_words((uint16_t *) &frame_buffer[i], (FRAME_SIZE - sizeof(Trailer)) >> 1);
