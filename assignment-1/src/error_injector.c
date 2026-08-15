@@ -32,3 +32,12 @@ void inject_burst_error(uint8_t *buffer, unsigned int size) {
         buffer[pos >> 3] ^= 1 << (pos % 8);
     }
 }
+
+void flip_two_words(uint16_t *buffer, unsigned int size) {
+    unsigned int pos1 = rand() % size;
+    unsigned int pos2 = pos1;
+    while (pos1 == pos2) pos2 = rand() % size;
+    uint16_t temp = buffer[pos1];
+    buffer[pos1] = buffer[pos2];
+    buffer[pos2] = temp;
+}

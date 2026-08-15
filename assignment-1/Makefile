@@ -10,13 +10,16 @@ CRC				= $(SRC_DIR)/crc.c
 ERROR_INJECTOR 	= $(SRC_DIR)/error_injector.c
 RECEIVER		= $(SRC_DIR)/receiver.c
 SENDER			= $(SRC_DIR)/sender.c
+TEST 			= $(SRC_DIR)/send_tests.c
 
 # Main source files
 RECEIVER_SRC = $(RECEIVER) $(COMMON) $(CRC)
 SENDER_SRC	 = $(SENDER) $(COMMON) $(CRC) $(ERROR_INJECTOR)
+TEST_SRC	 = $(TEST) $(COMMON) $(CRC) $(ERROR_INJECTOR)
 
 # Binary files
 RECEIVER_BIN	= $(BIN_DIR)/receiver.out
+TEST_BIN		= $(BIN_DIR)/send_tests.out
 SENDER_BIN		= $(BIN_DIR)/sender.out
 
 # Targets
@@ -35,7 +38,10 @@ $(RECEIVER_BIN): $(RECEIVER_SRC) | start
 $(SENDER_BIN): $(SENDER_SRC) | start
 	$(CC) $(CFLAGS) $^ -o $@
 
-build: $(RECEIVER_BIN) $(SENDER_BIN)
+$(TEST_BIN): $(TEST_SRC) | start
+	$(CC) $(CFLAGS) $^ -o $@
+
+build: $(RECEIVER_BIN) $(SENDER_BIN) $(TEST_BIN)
 
 # For running the receiver
 receiver: $(RECEIVER_BIN)
@@ -44,6 +50,10 @@ receiver: $(RECEIVER_BIN)
 # For running the sender
 sender: $(SENDER_BIN)
 	@$(SENDER_BIN) $(ARGS)
+
+# For running the test sender
+test: $(TEST_BIN)
+	@$(TEST_BIN) $(ARGS)
 
 # For cleaning up
 clean:

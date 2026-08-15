@@ -26,4 +26,7 @@ void inject_odd_errors(uint8_t *buffer, unsigned int size);
 // Function to inject burst error
 void inject_burst_error(uint8_t *buffer, unsigned int size);
 
+// Function to flip two 16-bit words
+void flip_two_words(uint16_t *buffer, unsigned int size);
+
 #endif

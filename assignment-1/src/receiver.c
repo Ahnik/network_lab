@@ -74,31 +74,31 @@ int main() {
             printf("%s : ", code_to_string(code));
             switch (code) {
                 case CHECKSUM:
-                    if (find_checksum((uint16_t *) frame_buffer[i].payload, (PAYLOAD_SIZE+2)/2) == 0)
+                    if (find_checksum((uint16_t *) &frame_buffer[i], (PAYLOAD_SIZE + sizeof(Header) + 2) >> 1) == 0)
                         printf("VALID\n");
                     else
                         printf("CORRUPTED\n");
                     break;
                 case CRC8:
-                    if (compute_crc8(frame_buffer[i].payload, PAYLOAD_SIZE+1) == 0) 
+                    if (compute_crc8(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 1) == 0) 
                         printf("VALID\n");
                     else
                         printf("CORRUPTED\n");
                     break;
                 case CRC10:
-                    if (compute_crc10(frame_buffer[i].payload, PAYLOAD_SIZE+2) == 0)
+                    if (compute_crc10(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 2) == 0)
                         printf("VALID\n");
                     else
                         printf("CORRUPTED\n");
                     break;
                 case CRC16:
-                    if (compute_crc16(frame_buffer[i].payload, PAYLOAD_SIZE+2) == 0)
+                    if (compute_crc16(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 2) == 0)
                         printf("VALID\n");
                     else
                         printf("CORRUPTED\n");
                     break;
                 case CRC32:
-                    if (compute_crc32(frame_buffer[i].payload, PAYLOAD_SIZE+4) == 0)
+                    if (compute_crc32(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) == 0)
                         printf("VALID\n");
                     else
                         printf("CORRUPTED\n");

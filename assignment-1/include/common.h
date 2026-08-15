@@ -33,6 +33,7 @@ typedef union {
 } Trailer;
 #pragma pack(pop)
 
+#define ERROR_RANGE (FRAME_SIZE - sizeof(Trailer))
 #define PAYLOAD_SIZE (FRAME_SIZE - sizeof(Header) - sizeof(Trailer))
 
 #pragma pack(push, 1)
@@ -57,8 +58,5 @@ Frame *chunk_file(const char *filename, uint32_t *num_of_frames);
 
 // Function to find the 16-bit checksum of a buffer
 uint16_t find_checksum(const uint16_t *buffer, size_t size);
-
-// Function to verify 16-bit checksum
-bool verify_checksum(const uint16_t *buffer, size_t size, uint16_t checksum);
 
 #endif
