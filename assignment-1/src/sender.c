@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+#ifdef CRC_TABLE
     // Create CRC lookup table
     switch (code) {
         case CRC8:
@@ -49,6 +50,7 @@ int main(int argc, char **argv) {
         case CRC32:
             create_crc32_table();
     }
+#endif
 
     // Seed the random number generator
     srand((unsigned int) time(NULL));

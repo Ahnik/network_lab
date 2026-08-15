@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #define BENCHMARK   /* Comment this line if you don't want to calculate time taken */
+#define CRC_TABLE   /* Comment this line if you want to test with no CRC table */
 
 #include <stdint.h>
 #include <limits.h>
@@ -13,6 +14,7 @@
 #define FRAME_SIZE       64        // Size of frame in bytes
 #define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
 #define HEADER_SIZE       4        // Size of the header containing length
+
 #ifdef BENCHMARK
     #define PRINT_BUFFER_SIZE 42
 #endif
