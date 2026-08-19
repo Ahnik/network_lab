@@ -9,11 +9,13 @@
 #include "crc.h"
 
 int main() {
+#ifdef CRC_TABLE
     // Create the CRC lookup tables
     create_crc8_table();
     create_crc10_table();
     create_crc16_table();
     create_crc32_table();
+#endif
 
     // Create the socket to listen to connection requests
     int receiver_socket;

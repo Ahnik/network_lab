@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# $1 = IP address
+# $2 = file
+
 if [ $# -lt 2 ]; then
     echo "Too few arguments!"
     exit 1
