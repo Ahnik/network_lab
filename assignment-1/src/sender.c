@@ -117,25 +117,26 @@ int main(int argc, char **argv) {
     for (uint32_t i = 0; i < total_frames; i++) {
         printf("--- FRAME #%u ---\n", i+1);
         error = rand() % ERROR_NUM;
+        printf("ERROR: ");
         switch (error) {
             case SINGLE_BIT:
                 inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("Single bit error injected!\n");
+                printf("SINGLE\n");
                 break;
             case TWO_ISOLATED:
                 inject_two_isolated_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("Two isolated single bit errors injected!\n");
+                printf("ISOLATED\n");
                 break;
             case ODD_ERRORS:
                 inject_odd_errors((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("Odd errors injected!\n");
+                printf("ODD\n");
                 break;
             case BURST:
                 inject_burst_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("Burst error injected!\n");
+                printf("BURST\n");
                 break;
             case NO_ERROR:
-                printf("No error injected!\n");
+                printf("NONE\n");
         }
     }
 

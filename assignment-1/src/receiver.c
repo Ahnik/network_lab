@@ -46,8 +46,6 @@ int main() {
     struct sockaddr_in sender_addr;
     socklen_t addr_size = (socklen_t) sizeof(sender_addr);
     while (true) {
-        printf("Waiting for connection...\n");
-
         // Accept connection from sender
         if ((sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_addr, &addr_size)) < 0)
             exit_with_error("Accept Failed!");
@@ -71,7 +69,7 @@ int main() {
 
             /* TODO: Check what error detection scheme is used */
             printf("--- FRAME #%u ---\n", i+1);
-            printf("Payload extracted : %hu bytes\n", frame_buffer[i].header.length);
+            // printf("Payload extracted : %hu bytes\n", frame_buffer[i].header.length);
             uint16_t code = ntohs(frame_buffer[i].header.type);
             printf("%s : ", code_to_string(code));
             switch (code) {
@@ -111,7 +109,6 @@ int main() {
         }
         close(sender_socket);
         free(frame_buffer);
-        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     }
 
     return 0;
