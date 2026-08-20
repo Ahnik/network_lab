@@ -67,7 +67,6 @@ int main() {
                 total_bytes_read += bytes_read;
             }
 
-            /* TODO: Check what error detection scheme is used */
             printf("--- FRAME #%u ---\n", i+1);
             // printf("Payload extracted : %hu bytes\n", frame_buffer[i].header.length);
             uint16_t code = ntohs(frame_buffer[i].header.type);

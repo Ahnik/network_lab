@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// #define BENCHMARK   /* Comment this line if you don't want to calculate time taken */
+#define BENCHMARK   /* Comment this line if you don't want to calculate time taken */
 #define CRC_TABLE   /* Comment this line if you want to test with no CRC table */
 
 #include <stdint.h>
@@ -11,13 +11,13 @@
 
 #define RECEIVER_PORT  8989
 
-#define FRAME_SIZE       64        // Size of frame in bytes
-#define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
-#define HEADER_SIZE       4        // Size of the header containing length
-
 #ifdef BENCHMARK
     #define PRINT_BUFFER_SIZE 42
 #endif
+
+#define FRAME_SIZE       64        // Size of frame in bytes
+#define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
+#define HEADER_SIZE       4        // Size of the header containing length
 
 #pragma pack(push, 1)
 typedef struct {
