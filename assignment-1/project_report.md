@@ -72,7 +72,7 @@ flowchart LR
 
     subgraph Receiver [Receiver]
         direction TB
-        N["Listen for incoming connection requests"] -> O["Receive 4-byte header from sender"]
+        N["Listen for incoming connection requests"] --> O["Receive 4-byte header from sender"]
         O --> P["Dynamically allocate memory for the data"]
         P --> Q["Receive all frames from sender"]
         Q --> R["Recompute FCS"]
@@ -120,4 +120,33 @@ typedef struct {
     Trailer trailer;
 } Frame;
 #pragma pack(pop)
+```
+
+### 1.4 Running The Programs
+For compiling and running the receiver:
+```text
+make receiver
+```
+
+For compiling and running the sender:
+```test
+make sender ARGS="<scheme> <ip address> <test file>"
+```
+
+For compiling and running the evaluator:
+```test
+make evaluator ARGS="<scheme> <ip address> <test file>"
+```
+
+### 1.5 Output
+Receiver output:
+```text
+--- FRAME #<frame_num> ---
+<scheme>: <VALID/CORRUPTED>
+```
+
+Sender output:
+```text
+--- FRAME #<frame_num> ---
+ERROR: <type of error>
 ```
