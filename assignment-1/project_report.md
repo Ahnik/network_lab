@@ -62,7 +62,8 @@ flowchart LR
         E -- "ODD ERRORS" --> H["inject_odd_errors()"]
         E -- "BURST" --> I["inject_burst_error()"]
         E -- "NO ERROR" --> J["No error injected"]
-        G --> K["Set up connection with receiver"]
+        F --> K["Set up connection with receiver"]
+        G --> K
         H --> K
         I --> K
         J --> K
@@ -149,4 +150,205 @@ Sender output:
 ```text
 --- FRAME #<frame_num> ---
 ERROR: <type of error>
+```
+
+## 2. Implementation
+
+### 2.1 Checksum-16
+
+The checksum is calculated by treating the input data as a sequence of 16-bit data words, adding up all the data words in a 16-bit accumulator. If carry is detected, then it is added to the sum. Finally, we take one's complement of the sum to get the result.
+```c
+uint16_t find_checksum(const uint16_t *buffer, size_t length) {
+    uint16_t sum = 0;
+    uint16_t carry = 0;
+    uint16_t next_carry = 0;
+
+    for (size_t i = 0; i < length; i++) {
+        next_carry = 0;
+        if (sum > UINT16_MAX - htons(buffer[i]) - carry)
+            next_carry = 1;
+        sum += htons(buffer[i]) + carry;
+        carry = next_carry;
+    }
+    sum += carry;
+
+    return ~sum;
+}
+```
+
+### 2.2 CRC Implementations
+
+CRC calculator is implemented using bitwise polynomial long division by using a CRC shift register. CRC for the header and payload is calculated byte-wise. For each byte, in each step, the most significant bit of the byte is checked and the byte is left-shifted by one. If the MSB is 1, then the byte is XORed with the generator polynomial after left shift. In order to further optimise CRC calculation, CRC for each of the 256 possible bytes are precomputed and stored in a lookup table and are used for computing CRC for the frame.
+
+Creating CRC lookup tables:
+```c
+void create_crc8_table() {
+    for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint8_t reg = (uint8_t) i;
+        for (int j = 0; j < 8; j++) {
+            if (reg & 0x80)
+                reg = (reg << 1) ^ CRC8_GENERATOR;
+            else
+                reg <<= 1;
+        }
+        crc8_table[i] = reg;
+    }
+}
+
+void create_crc10_table() {
+    for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint16_t reg = i << 2;
+        for (int j = 0; j < 8; j++) {
+            if (reg & 0x0200)
+                reg = (reg << 1) ^ CRC10_GENERATOR;
+            else
+                reg <<= 1;
+        }
+        crc10_table[i] = reg & 0x03FF;
+    }
+}
+
+void create_crc16_table() {
+    for (uint16_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint16_t reg = i << 8;
+        for (int j = 0; j < 8; j++) {
+            if (reg & 0x8000)
+                reg = (reg << 1) ^ CRC16_GENERATOR;
+            else
+                reg <<= 1;
+        }
+        crc16_table[i] = reg;
+    }
+}
+
+void create_crc32_table() {
+    for (uint32_t i = 0; i < CRC_TABLE_SIZE; i++) {
+        uint32_t reg = i << 24;
+        for (int j = 0; j < 8; j++) {
+            if (reg & 0x80000000)
+                reg = (reg << 1) ^ CRC32_GENERATOR;
+            else
+                reg <<= 1;
+        }
+        crc32_table[i] = reg;
+    }
+}
+```
+
+Calculating CRC with the help of lookup tables:
+```c
+uint8_t compute_crc8(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
+    uint8_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint8_t pos = crc ^ buffer[i];
+        crc = crc8_table[pos];
+    }
+    return crc;
+}
+
+uint16_t compute_crc10(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
+    uint16_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint8_t pos = (uint8_t) (crc >> 2) ^ buffer[i];
+        crc = (crc << 8) ^ crc10_table[pos];
+    }
+    crc = crc & 0x03FF;
+    return crc;
+}
+
+uint16_t compute_crc16(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
+    uint16_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint8_t pos = (uint8_t) (crc >> 8) ^ buffer[i];
+        crc = (crc << 8) ^ crc16_table[pos];
+    }
+    return crc;
+}
+
+uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
+    uint32_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint8_t pos = (uint8_t) (crc >> 24) ^ buffer[i];
+        crc = (crc << 8) ^ crc32_table[pos];
+    }
+    return crc;
+}
+```
+
+An alternative implementation for CRC calculation is used for comparing perfomance improvement with the lookup table approach as shown by the implemenation of CRC-32:
+```c
+uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
+    if (buffer == NULL) return 0;
+    uint32_t crc = 0;
+    for (size_t i = 0; i < size; i++) {
+        uint32_t byte = (uint32_t) buffer[i];
+        crc ^= byte << 24;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x8000000)
+                crc = (crc << 1) ^ CRC32_GENERATOR;
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
+```
+
+The generator polynomials used are:
+```c
+// CRC generators
+#define CRC8_GENERATOR  0x07
+#define CRC10_GENERATOR 0x0233
+#define CRC16_GENERATOR 0x1021
+#define CRC32_GENERATOR 0x04C11DB7
+```
+
+### 2.3 Error Injector Functions
+
+The error injector module (error_injector.c) implements four types of generic error types to be injected at random:
+- Single-bit error (a bit in the frame is picked at random and inverted)
+```c
+void inject_single_bit_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size << 3);
+    buffer[pos >> 3] ^= 1 << (pos % 8);
+}
+```
+
+- Two isolated single-bit errors (two bits in the frame are picked at random and inverted)
+```c
+void inject_two_isolated_error(uint8_t *buffer, unsigned int size) {
+    int m = rand() % (size << 3);
+    int n = m;
+    while (abs(m - n) < 2) n = rand() % (size << 3);
+    buffer[m >> 3] ^= 1 << (m % 8);
+    buffer[n >> 3] ^= 1 << (n % 8);
+}
+```
+
+- Odd errors (3, 5 or 7 bits in the frame are chosen at random and inverted)
+```c
+void inject_odd_errors(uint8_t *buffer, unsigned int size) {
+    unsigned int no_of_errors = ((rand() % 3) * 2) + 3;
+    for (unsigned int i = 0; i < no_of_errors; i++) {
+        unsigned int pos = rand() % (size << 3);
+        buffer[pos >> 3] ^= 1 << (pos % 8);
+    }
+}
+```
+
+- Burst error (3 to 34 consecutive bits are inverted from a random starting location)
+```c
+void inject_burst_error(uint8_t *buffer, unsigned int size) {
+    unsigned int no_of_errors = (rand() % 32) + 3;
+    unsigned int start = rand() % (size << 3);
+    for (unsigned int i = 0; i < no_of_errors; i++) {
+        unsigned int pos = start + i;
+        if (pos >= (size << 3)) break;
+        buffer[pos >> 3] ^= 1 << (pos % 8);
+    }
+}
 ```

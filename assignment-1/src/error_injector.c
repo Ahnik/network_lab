@@ -17,7 +17,7 @@ void inject_two_isolated_error(uint8_t *buffer, unsigned int size) {
 }
 
 void inject_odd_errors(uint8_t *buffer, unsigned int size) {
-    unsigned int no_of_errors = ((rand() % 3) << 2) + 3;
+    unsigned int no_of_errors = ((rand() % 3) * 2) + 3;
     for (unsigned int i = 0; i < no_of_errors; i++) {
         unsigned int pos = rand() % (size << 3);
         buffer[pos >> 3] ^= 1 << (pos % 8);
