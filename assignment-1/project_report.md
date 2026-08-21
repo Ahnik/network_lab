@@ -755,7 +755,7 @@ Using lookup tables:
 
 ### CHECKSUM
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.001004 | 0.346115 |
 | 2 | 0.001014 | 0.755927 |
@@ -767,7 +767,7 @@ Using lookup tables:
 
 ### CRC8
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.000938 | 0.681922 |
 | 2 | 0.000630 | 0.687615 |
@@ -779,7 +779,7 @@ Using lookup tables:
 
 ### CRC10
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.001482 | 0.733612 |
 | 2 | 0.000868 | 0.588235 |
@@ -791,7 +791,7 @@ Using lookup tables:
 
 ### CRC16
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.001507 | 0.953877 |
 | 2 | 0.000875 | 0.723453 |
@@ -803,7 +803,7 @@ Using lookup tables:
 
 ### CRC32
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.001149 | 1.132429 |
 | 2 | 0.000954 | 0.891656 |
@@ -817,7 +817,7 @@ Without using lookup table:
 
 ### CHECKSUM
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.001052 | 0.493519 |
 | 2 | 0.000838 | 0.631322 |
@@ -829,7 +829,7 @@ Without using lookup table:
 
 ### CRC8
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.007439 | 0.402377 |
 | 2 | 0.006646 | 0.666913 |
@@ -841,7 +841,7 @@ Without using lookup table:
 
 ### CRC10
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.007818 | 0.362743 |
 | 2 | 0.009900 | 0.834038 |
@@ -853,7 +853,7 @@ Without using lookup table:
 
 ### CRC16
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.011757 | 0.476758 |
 | 2 | 0.008479 | 0.722870 |
@@ -865,7 +865,7 @@ Without using lookup table:
 
 ### CRC32
 
-| Test | Average Computation Time (ms) | Execution Time (ms) |
+| Test | Average FCS Computation Time (ms) | Program Execution Time (ms) |
 |---:|---:|---:|
 | 1 | 0.014720 | 0.614307 |
 | 2 | 0.009623 | 0.740688 |
@@ -891,7 +891,7 @@ For similar reasons, error injection is only limited to header and payload in ot
 
 ### 4.3 Testing Performance Improvements From Using Lookup Tables (Test 3)
 
-From the results of this test, it has been clear that the use of lookup tables in implementation has resulted in performance improvements in both the average time taken to calculate CRC of a frame (by 10 to 20 times in certain test cases) and also in the overall program execution time (by 5 to 7 times).
+From the data on this test, the use of lookup tables has reduced the CRC computation time per frame by approximately 89.9% and total program execution time by approximately 82.3% across CRC-8, CRC-10, CRC-16 and CRC-32, which clearly demonstrates the advantage of using lookup tables. There is no improvements in checksum calculation performance as there is no use of lookup tables for checksum calculation.
 
 ## 5. Comments
 
