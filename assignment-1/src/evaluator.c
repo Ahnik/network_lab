@@ -78,9 +78,12 @@ int main(int argc, char **argv) {
     // Inject an error
     ErrorType error;
     for (uint32_t i = 0; i < total_frames; i++) {
+        printf("--- FRAME %u ---\n", (i+1));
+        printf("ERROR: ");
         switch (i % 3) {
             case 0:
                 inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                printf("SINGLE\n");
                 break;
             case 1:
                 switch (code) {
@@ -99,9 +102,11 @@ int main(int argc, char **argv) {
                     default:
                         inject_crc8_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
                 }
+                printf("CRC_PROOF\n");
                 break;
             case 2:
                 flip_two_words((uint16_t *) &frame_buffer[i], (FRAME_SIZE - sizeof(Trailer)) >> 1);
+                printf("FLIP_WORDS\n");
         }
     }
 

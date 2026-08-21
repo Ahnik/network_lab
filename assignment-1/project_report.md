@@ -28,23 +28,24 @@ The project is organized into header files (for function declarations) and sourc
 ```
 assignment-1/
 ├── include/
-│   ├── common.h            # Common macros, struct and function declarations
-│   ├── crc.h               # CRC and CRC look-up table function declarations
-│   └── error_injector.h    # Error-injection function declarations
+│   ├── common.h                # Common macros, struct and function declarations
+│   ├── crc.h                   # CRC and CRC look-up table function declarations
+│   └── error_injector.h        # Error-injection function declarations
 ├── src/
-│   ├── sender.c            # Sender program
-│   ├── receiver.c          # Receiver program
-│   ├── evaluator.c         # Sender program for evaluation of errors
-│   ├── common.c            # Implementation of common functions
-│   ├── crc.c               # CRC-8, CRC-10, CRC-16, CRC-32 implementations along with CRC tables
-│   └── error_injector.c    # Error injection function implementations
-├── bin/                    # Compiled binaries and object files
-├── logs/                   # Output logs from sender and receiver (for accuracy analysis)
-├── tests/                  # All test files
-├── Makefile                # Build system
-├── run_tests.sh            # Bash script for running performance tests for a given error detection scheme
-├── run_all_tests.sh        # Bash script for running performance tests for all error detection schemes
-└── analyze_logs.py         # Python script to generate statistics on the accuracy of each of the schemes
+│   ├── sender.c                # Sender program
+│   ├── receiver.c              # Receiver program
+│   ├── evaluator.c             # Sender program for evaluation of errors
+│   ├── common.c                # Implementation of common functions
+│   ├── crc.c                   # CRC-8, CRC-10, CRC-16, CRC-32 implementations along with CRC tables
+│   └── error_injector.c        # Error injection function implementations
+├── bin/                        # Compiled binaries and object files
+├── logs/                       # Output logs from sender and receiver (for accuracy analysis)
+├── tests/                      # All test files
+├── Makefile                    # Build system
+├── run_tests.sh                # Bash script for running performance tests for a given error detection scheme
+├── run_all_tests.sh            # Bash script for running performance tests for all error detection schemes
+├── analyze_evaluator_logs.py   # Python script to generate statistics for the evaluator
+└── analyze_logs.py             # Python script to generate statistics on the accuracy of each of the schemes
 ```
 
 **Data Flow:**
@@ -352,3 +353,226 @@ void inject_burst_error(uint8_t *buffer, unsigned int size) {
     }
 }
 ```
+
+### 2.4 Sender Program
+
+The sender (`sender.c`) follows the following steps:
+
+1. Parses the command-line arguments for error detection code, receiver IP address and the input file.
+2. Creates lookup table if CRC is used.
+3. Divides the file into chunks of size 44 bytes adding padding to the last chunk if necessary.
+4. Compute FCS using the scheme provided.
+5. Randomly select an error and inject it into each of the frames (some frames may also be injected with no error in random chance).
+6. Set up receiver socket and connect to the receiver IP address and port.
+7. Send the total number of frames generated as a 4 byte header in network byte order for the receiver to pick up and allocate memory.
+8. Send each of the frames one by one.
+```c
+// Create the socket to communicate with the receiver
+    int receiver_socket;
+    if ((receiver_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        exit_with_error("Failed to create socket!");
+
+    // Initialize the fill up the receiver address struct
+    struct sockaddr_in receiver_addr;
+    memset(&receiver_addr, 0, sizeof(receiver_addr));
+    receiver_addr.sin_family = AF_INET;
+    receiver_addr.sin_port   = htons(RECEIVER_PORT);
+
+    if (inet_pton(AF_INET, argv[2], &receiver_addr.sin_addr) <= 0)
+        exit_with_error("inet_pton error for %s!", argv[1]);
+
+    // Try to connect to the receiver
+    if (connect(receiver_socket, (struct sockaddr *) &receiver_addr, (socklen_t) sizeof(receiver_addr)) < 0)
+        exit_with_error("Connection failed!");
+
+    // Send the header containing total number of frames in the message
+    uint32_t net_length = htonl(total_frames);
+    uint8_t *buffer_ptr = (uint8_t *) &net_length;
+    ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < HEADER_SIZE) {
+        ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, HEADER_SIZE - total_bytes_sent, 0);
+        if (bytes_sent < 0)
+            exit_with_error("Send Failed!");
+        total_bytes_sent += bytes_sent;
+    }
+
+    // Sending the total message to the receiver
+    total_bytes_sent = 0;
+    ssize_t total_size = total_frames * FRAME_SIZE;
+    buffer_ptr = (uint8_t *) frame_buffer;
+    while (total_bytes_sent < total_size) {
+        ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, total_size - total_bytes_sent, 0);
+        if (bytes_sent < 0)
+            exit_with_error("Send Failed!");
+        total_bytes_sent += bytes_sent;
+    }
+    close(receiver_socket);
+    free(frame_buffer);
+```
+
+### 2.5 Receiver Program
+
+The receiver (`receiver.c`) follows the following steps:
+
+1. Creates lookup tables for all the CRC error detection schemes.
+2. Sets up receiver socket, sets it to be reusable, binds it to the receiver port and sets the socket as a listening socket.
+3. Executes an infinite while loop in which the socket listens for incoming sender connection requests.
+4. On connection request, the receiver creates a sender socket to communicate with the sender.
+5. On receiving frames from the sender, the receiver checks the type field in the frame header to determine which scheme is being used.
+6. After determining the scheme used, the receiver verifies the FCS.
+7. The receiver prints the results (VALID or CORRUPTED) for each of the frame onto stdout.
+
+```c
+while (true) {
+        // Accept connection from sender
+        if ((sender_socket = accept(receiver_socket, (struct sockaddr *) &sender_addr, &addr_size)) < 0)
+            exit_with_error("Accept Failed!");
+
+        // Receive the header containing number of frames in the message
+        uint32_t total_frames = read_payload_len(sender_socket);
+
+        Frame *frame_buffer = (Frame *) calloc(total_frames, sizeof(Frame));
+        if (frame_buffer == NULL)
+            exit_with_error("Memory allocation error!");
+
+        for (uint32_t i = 0; i < total_frames; i++) {
+            uint8_t *frame_ptr = (uint8_t *) &frame_buffer[i];
+            ssize_t total_bytes_read = 0;
+            while (total_bytes_read < FRAME_SIZE) {
+                ssize_t bytes_read = recv(sender_socket, frame_ptr + total_bytes_read, FRAME_SIZE - total_bytes_read, 0);
+                if (bytes_read <= 0)
+                    exit_with_error("recv failed!");
+                total_bytes_read += bytes_read;
+            }
+
+            printf("--- FRAME #%u ---\n", i+1);
+            // printf("Payload extracted : %hu bytes\n", frame_buffer[i].header.length);
+            uint16_t code = ntohs(frame_buffer[i].header.type);
+            printf("%s : ", code_to_string(code));
+            switch (code) {
+                case CHECKSUM:
+                    if (find_checksum((uint16_t *) &frame_buffer[i], (PAYLOAD_SIZE + sizeof(Header) + 2) >> 1) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC8:
+                    if (compute_crc8(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 1) == 0) 
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC10:
+                    if (compute_crc10(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 2) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC16:
+                    if (compute_crc16(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 2) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                case CRC32:
+                    if (compute_crc32(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) == 0)
+                        printf("VALID\n");
+                    else
+                        printf("CORRUPTED\n");
+                    break;
+                default:
+                    printf("CORRUPTED\n");
+            }
+        }
+        close(sender_socket);
+        free(frame_buffer);
+    }
+```
+
+### 2.6 Evaluator Program
+
+The evaluator program (`evaluator.c`) is a modified version of the sender program that instead of injecting the four types of errors that are injected in the sender program, it instead injects the following three types of errors:
+
+1. Error detected by both CRC and checksum - For this, the inject_single_bit_error() function is used to inject a single-bit error in the frame that is easily detected by both CRC and checksum.
+2. Error detected by checksum but not by CRC - For this, we XOR consecutive bytes with 0x01 followed by the CRC generator polynomial.
+3. Error detected by CRC but not by checksum - For this, we simply swap two 16-bit words.
+
+Implementation of the error injection functions for the last two types of errors:
+```c
+void flip_two_words(uint16_t *buffer, unsigned int size) {
+    unsigned int pos1 = rand() % size;
+    unsigned int pos2 = pos1;
+    while (pos1 == pos2) pos2 = rand() % size;
+    uint16_t temp = buffer[pos1];
+    buffer[pos1] = buffer[pos2];
+    buffer[pos2] = temp;
+}
+
+void inject_crc8_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 1);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= CRC8_GENERATOR;
+}
+
+void inject_crc10_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 2);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC10_GENERATOR >> 2);
+    buffer[pos+2] ^= (uint8_t) (CRC10_GENERATOR << 6);
+}
+
+void inject_crc16_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 2);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC16_GENERATOR >> 8);
+    buffer[pos+2] ^= (uint8_t) (CRC16_GENERATOR);
+}
+void inject_crc32_proof_error(uint8_t *buffer, unsigned int size) {
+    unsigned int pos = rand() % (size - 4);
+    buffer[pos] ^= 0x01;
+    buffer[pos+1] ^= (uint8_t) (CRC32_GENERATOR >> 24);
+    buffer[pos+2] ^= (uint8_t) (CRC32_GENERATOR >> 16);
+    buffer[pos+3] ^= (uint8_t) (CRC32_GENERATOR >> 8);
+    buffer[pos+4] ^= (uint8_t) (CRC32_GENERATOR);
+}
+```
+
+Implementation of how the evaluator injects errors:
+
+```c
+// Inject an error
+    ErrorType error;
+    for (uint32_t i = 0; i < total_frames; i++) {
+        printf("--- FRAME %u ---\n", (i+1));
+        printf("ERROR: ");
+        switch (i % 3) {
+            case 0:
+                inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                printf("SINGLE\n");
+                break;
+            case 1:
+                switch (code) {
+                    case CRC8:
+                        inject_crc8_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC10:
+                        inject_crc10_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC16:
+                        inject_crc16_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    case CRC32:
+                        inject_crc32_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                        break;
+                    default:
+                        inject_crc8_proof_error((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+                }
+                printf("CRC_PROOF\n");
+                break;
+            case 2:
+                flip_two_words((uint16_t *) &frame_buffer[i], (FRAME_SIZE - sizeof(Trailer)) >> 1);
+                printf("FLIP_WORDS\n");
+        }
+    }
+```
+
