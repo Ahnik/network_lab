@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 
 if [ $# -lt 2 ]; then
     echo "Too few arguments!"
@@ -10,4 +10,5 @@ for i in $(seq 1 1 $n); do
     echo "----------------- TEST #$i -----------------------"
     ./bin/sender.out $1 $2 ./tests/test$i.bin > /dev/null
     printf "\n"
+    sleep 3
 done

@@ -1,8 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// #define BENCHMARK   /* Comment this line if you don't want to calculate time taken */
-#define CRC_TABLE   /* Comment this line if you want to test with no CRC table */
+#define BENCHMARK   /* Comment this line if you don't want to calculate time taken */
+// #define CRC_TABLE   /* Comment this line if you want to test with no CRC table */
 
 #include <stdint.h>
 #include <limits.h>
