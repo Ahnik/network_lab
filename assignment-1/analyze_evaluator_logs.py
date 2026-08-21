@@ -9,8 +9,6 @@ SCHEMES = [
     "CRC32"
 ]
 
-FRAMES_PER_SCHEME = 10000
-
 ERROR_TYPES = [
     "SINGLE",
     "CRC_PROOF",
@@ -154,8 +152,6 @@ def write_report(filename, statistics):
     with open(filename, "w", encoding="utf-8") as f:
         f.write("ERROR DETECTION STATISTICS\n")
         f.write("==========================\n\n")
-
-        f.write(f"Frames per scheme : {FRAMES_PER_SCHEME}\n")
 
         f.write("Error types       : " + ", ".join(ERROR_TYPES) + "\n")
 

@@ -12,7 +12,7 @@
 
 ### 1.1 Purpose
 
-The purpose of this program is to implement and evaluate the error detection schemes - **16-bit Checksum** and **Cyclic Redundancy Check** on a simulated noisy network and to measure the performance and accuracy of the various error detection schemes. The system consists of :
+The purpose of this program is to implement and evaluate the error detection schemes - **16-bit Checksum** and **Cyclic Redundancy Check** on a simulated noisy network and to measure the performance and accuracy of the various error detection schemes. The system uses POSIX sockets for communication. The system consists of :
 
 - **Sender** - Reads an input file, chunks it into fixed-sized frames of 64 bytes, computes a Frame Check Sequence (FCS) using one of the error detection schemes, injects a randomly chosen error into each frame and transmits the frames to the receiver over a TCP socket.
 - **Receiver** - Listens on a TCP port, accepts incoming connections from senders and receives frames from the senders. It then checks for errors in the frames using the FCS in the trailer of the frames and prints whether the frame is VALID or CORRUPTED.
@@ -616,7 +616,7 @@ ERROR: FLIP_WORDS
 
 Three different types of tests and evaluations are conducted on the system and statistics for these tests are collected. These are:
 
-### 3.1 Error Detection Statistics
+### 3.1 Error Detection Statistics (Test 1)
 
 In this test, a test file of size 96 MB is chunked and sent by the sender program (`sender.c`) to the receiver program (`receiver.c`) repeatedly using each of the error detecting schemes and outputs from both the sender and receiver about the type of error injected and whether or not any error is detected or not are collected in a log file. Then a Python script (`analyze_logs.py`) is used to read the data from these logs to prepare a statistical report on the detection rate of each of the error detection schemes on the different types of errors injected.
 
@@ -697,7 +697,7 @@ SINGLE                    441835         0    441835     100.00%
 
 ```
 
-### 3.2 Evaluator Statistics
+### 3.2 Evaluator Statistics (Test 2)
 
 This test is similar to the first test but the difference is that we instead use the evaluator program (`evaluator.c`) to send the frames to the receiver and record their outputs in log files. We then use the Python script (`analyze_evaluator_logs.py`) to analyze the receiver and evaluator logs to conduct statistics and generate a report file detailing the statistics obtained. The same test file of 96 MB used in the first test is used in this test.
 
@@ -707,7 +707,6 @@ The report generated is as follows:
 ERROR DETECTION STATISTICS
 ==========================
 
-Frames per scheme : 10000
 Error types       : SINGLE, CRC_PROOF, FLIP_WORDS
 Detection schemes : CHECKSUM, CRC8, CRC10, CRC16, CRC32
 
@@ -767,7 +766,7 @@ FLIP_WORDS           706989         9    706998     100.00%
 
 ```
 
-### 3.3 Testing Performance Improvements From Using Lookup Tables
+### 3.3 Testing Performance Improvements From Using Lookup Tables (Test 3)
 
 In the implementation of CRC in this project, look-up tables are used to precompute the value of CRC for each byte ahead of time in order to improve performance of CRC calculation. To test the performance improvement over calculating CRC for each byte of the frame as they come, both methods are used with their implementations mentioned before in this report.
 
@@ -1087,14 +1086,31 @@ Execution time                         : 21306.275812 ms
 
 ```
 
-## 4. Conclusion
+## 4. Analysis and Conclusion
 
-### 4.1 Error Detection Test
+### 4.1 Error Detection Test (Test 1)
 
 From the error detection test, as all the frames with no errors were successfully declared to be VALID by all error detection schemes, it indicates that the implementation of the error detection schemes has been correct.
 
 Another important observation is the fact that CRC32 was able to successfully detect all corrupted frames for all the types of error we tested for, demonstrating its effectiveness, which is why CRC32 is so widely used in various real-world applications.
 
-### 4.2 Evaluator Statistics
+### 4.2 Evaluator Statistics (Test 2)
 
-From the evaluator test statistics, we see that single-bit errors were easily detected by all of the error detection schemes
+From the evaluator test statistics, we see that single-bit errors were easily detected by all of the error detection schemes. This is in contrast with the previous test where single-bit errors were detected by each error detection schemes, with the exception of CRC32, with an accuracy rate of 95-96%. The reason for this disparity is because in the evaluator test (Test 2), error is only injected in the header and payload whereas in the error detection accuracy test (Test 1), error can be injected in the whole frame, including the trailer. This decision was taken was to exclude those cases where the FCS can be corrupted.
+
+For similar reasons, error injection is only limited to header and payload in other types of errors as well. For CRC_PROOF and FLIP_WORDS error types, it has been noticed that in certain cases, the error is detected even when it is not supposed to be detected. It is my supposition that such cases are those in which the `type` field of 2 bytes size is itself corrupted such that the receiver cannot detect the type of the error detection scheme used, which it reports as `CORRUPTED`.
+
+### 4.3 Testing Performance Improvements From Using Lookup Tables (Test 3)
+
+From the results of this test, it has been clear that the use of lookup tables in implementation has resulted in performance improvements in both the average time taken to calculate CRC of a frame (by 10 to 20 times in certain test cases) and also in the overall program execution time (by 5 to 7 times).
+
+## 5. Comments
+
+### What I Learned
+This assignment gave me practical experience on simulating how error detection schemes work on a bit by bit basis, how they are prepared and sent and detected. This allowed me a chance to utilise my prior experience with socket programming and to sharpen up my fundamentals.
+
+### What Was Challenging
+- Figuring out the optimal algorithms for CRC calculations.
+- Figuring out the types of errors to be injected for the evaluation portion.
+- Collecting the statistics systematically using Python.
+- Running the tests using Bash.
