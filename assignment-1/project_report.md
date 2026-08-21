@@ -694,6 +694,7 @@ NONE                           0    453495    453495       0.00%
 ODD                       393120         0    393120     100.00%
 SINGLE                    441835         0    441835     100.00%
 
+
 ```
 
 ### 3.2 Evaluator Statistics
@@ -717,77 +718,7 @@ Error Type         CHECKSUM        CRC8       CRC10       CRC16       CRC32
 ---------------------------------------------------------------------------
 SINGLE              100.00%     100.00%     100.00%     100.00%     100.00%
 CRC_PROOF           100.00%       1.76%       1.81%       1.83%       0.00%
-FLIP_WORDS            0.00%      99.28%      99.82%     100.00%     100.00%ERROR DETECTION STATISTICS
-==========================
-
-Detection schemes : CHECKSUM, CRC8, CRC10, CRC16, CRC32
-
-Detection Rate
-==============
-
-Error Type              CHECKSUM        CRC8       CRC10       CRC16       CRC32
---------------------------------------------------------------------------------
-BURST                     96.66%      94.66%      96.69%      96.65%     100.00%
-ISOLATED                  97.09%      99.27%      99.92%      99.91%     100.00%
-NONE                       0.00%       0.00%       0.00%       0.00%       0.00%
-ODD                       99.75%      99.84%      99.97%      99.99%     100.00%
-SINGLE                    96.80%      95.15%      96.81%      96.78%     100.00%
-
-
-Detailed Statistics
-===================
-
-SCHEME: CHECKSUM
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     409592     14136    423728      96.66%
-ISOLATED                  419784     12585    432369      97.09%
-NONE                           0    453712    453712       0.00%
-ODD                       399933      1003    400936      99.75%
-SINGLE                    429610     14187    443797      96.80%
-
-SCHEME: CRC8
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     401718     22682    424400      94.66%
-ISOLATED                  427732      3167    430899      99.27%
-NONE                           0    454024    454024       0.00%
-ODD                       395414       623    396037      99.84%
-SINGLE                    420512     21457    441969      95.15%
-
-SCHEME: CRC10
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     411104     14093    425197      96.69%
-ISOLATED                  429755       355    430110      99.92%
-NONE                           0    454687    454687       0.00%
-ODD                       396112       123    396235      99.97%
-SINGLE                    428209     14105    442314      96.81%
-
-SCHEME: CRC16
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     410679     14233    424912      96.65%
-ISOLATED                  430315       399    430714      99.91%
-NONE                           0    454320    454320       0.00%
-ODD                       396576        45    396621      99.99%
-SINGLE                    427415     14206    441621      96.78%
-
-SCHEME: CRC32
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     425897         0    425897     100.00%
-ISOLATED                  427410         0    427410     100.00%
-NONE                           0    453495    453495       0.00%
-ODD                       393120         0    393120     100.00%
-SINGLE                    441835         0    441835     100.00%
-
-
+FLIP_WORDS            0.00%      99.28%      99.82%     100.00%     100.00%
 
 
 DETAILED STATISTICS
@@ -1155,3 +1086,15 @@ Execution time                         : 21306.275812 ms
 
 
 ```
+
+## 4. Conclusion
+
+### 4.1 Error Detection Test
+
+From the error detection test, as all the frames with no errors were successfully declared to be VALID by all error detection schemes, it indicates that the implementation of the error detection schemes has been correct.
+
+Another important observation is the fact that CRC32 was able to successfully detect all corrupted frames for all the types of error we tested for, demonstrating its effectiveness, which is why CRC32 is so widely used in various real-world applications.
+
+### 4.2 Evaluator Statistics
+
+From the evaluator test statistics, we see that single-bit errors were easily detected by all of the error detection schemes
