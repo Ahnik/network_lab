@@ -1,10 +1,17 @@
 # Computer Networks Lab Report
 
-**Name:** Ahnik Sarkar
-**Roll No:** 002410501021
-**Class:** BCSE-III
-**Assignment Number:** 1
-**Problem Statement:** Design and implementation of an error detection module which has two schemes — Checksum and Cyclic Redundancy Check (CRC).
+<table>
+<tr>
+<td><strong>Name:</strong> Ahnik Sarkar</td>
+<td><strong>Roll No:</strong> 002410501021</td>
+<td><strong>Class:</strong> BCSE-III</td>
+<td><strong>Assignment Number:</strong> 1</td>
+</tr>
+</table>
+
+<p><strong>Problem Statement:</strong><br>
+Design and implementation of an error detection module which has two schemes — Checksum and Cyclic Redundancy Check (CRC).
+</p>
 
 ---
 
@@ -622,80 +629,65 @@ In this test, a test file of size 96 MB is chunked and sent by the sender progra
 
 The report generated is as follows:
 
+## Detection Rate
 
-```text
-ERROR DETECTION STATISTICS
-==========================
+| Error Type | CHECKSUM | CRC8 | CRC10 | CRC16 | CRC32 |
+|:-----------|---------:|-----:|------:|------:|------:|
+| BURST      | 96.66%   | 94.66% | 96.69% | 96.65% | 100.00% |
+| ISOLATED   | 97.09%   | 99.27% | 99.92% | 99.91% | 100.00% |
+| NONE       | 0.00%    | 0.00%  | 0.00%  | 0.00%  | 0.00% |
+| ODD        | 99.75%   | 99.84% | 99.97% | 99.99% | 100.00% |
+| SINGLE     | 96.80%   | 95.15% | 96.81% | 96.78% | 100.00% |
 
-Detection schemes : CHECKSUM, CRC8, CRC10, CRC16, CRC32
+### CHECKSUM
 
-Detection Rate
-==============
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| BURST      | 409592 | 14136 | 423728 | 96.66% |
+| ISOLATED   | 419784 | 12585 | 432369 | 97.09% |
+| NONE       | 0 | 453712 | 453712 | 0.00% |
+| ODD        | 399933 | 1003 | 400936 | 99.75% |
+| SINGLE     | 429610 | 14187 | 443797 | 96.80% |
 
-Error Type              CHECKSUM        CRC8       CRC10       CRC16       CRC32
---------------------------------------------------------------------------------
-BURST                     96.66%      94.66%      96.69%      96.65%     100.00%
-ISOLATED                  97.09%      99.27%      99.92%      99.91%     100.00%
-NONE                       0.00%       0.00%       0.00%       0.00%       0.00%
-ODD                       99.75%      99.84%      99.97%      99.99%     100.00%
-SINGLE                    96.80%      95.15%      96.81%      96.78%     100.00%
+### CRC8
 
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| BURST      | 401718 | 22682 | 424400 | 94.66% |
+| ISOLATED   | 427732 | 3167 | 430899 | 99.27% |
+| NONE       | 0 | 454024 | 454024 | 0.00% |
+| ODD        | 395414 | 623 | 396037 | 99.84% |
+| SINGLE     | 420512 | 21457 | 441969 | 95.15% |
 
-Detailed Statistics
-===================
+### CRC10
 
-SCHEME: CHECKSUM
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     409592     14136    423728      96.66%
-ISOLATED                  419784     12585    432369      97.09%
-NONE                           0    453712    453712       0.00%
-ODD                       399933      1003    400936      99.75%
-SINGLE                    429610     14187    443797      96.80%
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| BURST      | 411104 | 14093 | 425197 | 96.69% |
+| ISOLATED   | 429755 | 355 | 430110 | 99.92% |
+| NONE       | 0 | 454687 | 454687 | 0.00% |
+| ODD        | 396112 | 123 | 396235 | 99.97% |
+| SINGLE     | 428209 | 14105 | 442314 | 96.81% |
 
-SCHEME: CRC8
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     401718     22682    424400      94.66%
-ISOLATED                  427732      3167    430899      99.27%
-NONE                           0    454024    454024       0.00%
-ODD                       395414       623    396037      99.84%
-SINGLE                    420512     21457    441969      95.15%
+### CRC16
 
-SCHEME: CRC10
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     411104     14093    425197      96.69%
-ISOLATED                  429755       355    430110      99.92%
-NONE                           0    454687    454687       0.00%
-ODD                       396112       123    396235      99.97%
-SINGLE                    428209     14105    442314      96.81%
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| BURST      | 410679 | 14233 | 424912 | 96.65% |
+| ISOLATED   | 430315 | 399 | 430714 | 99.91% |
+| NONE       | 0 | 454320 | 454320 | 0.00% |
+| ODD        | 396576 | 45 | 396621 | 99.99% |
+| SINGLE     | 427415 | 14206 | 441621 | 96.78% |
 
-SCHEME: CRC16
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     410679     14233    424912      96.65%
-ISOLATED                  430315       399    430714      99.91%
-NONE                           0    454320    454320       0.00%
-ODD                       396576        45    396621      99.99%
-SINGLE                    427415     14206    441621      96.78%
+### CRC32
 
-SCHEME: CRC32
-----------------------------------------------------------------------
-Error Type              Detected    Missed     Total        Rate
-----------------------------------------------------------------
-BURST                     425897         0    425897     100.00%
-ISOLATED                  427410         0    427410     100.00%
-NONE                           0    453495    453495       0.00%
-ODD                       393120         0    393120     100.00%
-SINGLE                    441835         0    441835     100.00%
-
-
-```
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| BURST      | 425897 | 0 | 425897 | 100.00% |
+| ISOLATED   | 427410 | 0 | 427410 | 100.00% |
+| NONE       | 0 | 453495 | 453495 | 0.00% |
+| ODD        | 393120 | 0 | 393120 | 100.00% |
+| SINGLE     | 441835 | 0 | 441835 | 100.00% |
 
 ### 3.2 Evaluator Statistics (Test 2)
 
@@ -703,68 +695,53 @@ This test is similar to the first test but the difference is that we instead use
 
 The report generated is as follows:
 
-```text
-ERROR DETECTION STATISTICS
-==========================
+## Detection Rate
 
-Error types       : SINGLE, CRC_PROOF, FLIP_WORDS
-Detection schemes : CHECKSUM, CRC8, CRC10, CRC16, CRC32
+| Error Type | CHECKSUM | CRC8 | CRC10 | CRC16 | CRC32 |
+|:-----------|---------:|-----:|------:|------:|------:|
+| SINGLE     | 100.00%  | 100.00% | 100.00% | 100.00% | 100.00% |
+| CRC_PROOF  | 100.00%  | 1.76% | 1.81% | 1.83% | 0.00% |
+| FLIP_WORDS | 0.00%    | 99.28% | 99.82% | 100.00% | 100.00% |
 
-DETECTION RATE
-==============
+### CHECKSUM
 
-Error Type         CHECKSUM        CRC8       CRC10       CRC16       CRC32
----------------------------------------------------------------------------
-SINGLE              100.00%     100.00%     100.00%     100.00%     100.00%
-CRC_PROOF           100.00%       1.76%       1.81%       1.83%       0.00%
-FLIP_WORDS            0.00%      99.28%      99.82%     100.00%     100.00%
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| SINGLE     | 737136 | 5 | 737141 | 100.00% |
+| CRC_PROOF  | 731706 | 36 | 731742 | 100.00% |
+| FLIP_WORDS | 5 | 707298 | 707303 | 0.00% |
 
+### CRC8
 
-DETAILED STATISTICS
-===================
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| SINGLE     | 735341 | 0 | 735341 | 100.00% |
+| CRC_PROOF  | 12913 | 718961 | 731874 | 1.76% |
+| FLIP_WORDS | 701953 | 5099 | 707052 | 99.28% |
 
-SCHEME: CHECKSUM
-----------------------------------------------------------------------
-Error Type         Detected    Missed     Total        Rate
------------------------------------------------------------
-SINGLE               737136         5    737141     100.00%
-CRC_PROOF            731706        36    731742     100.00%
-FLIP_WORDS                5    707298    707303       0.00%
+### CRC10
 
-SCHEME: CRC8
-----------------------------------------------------------------------
-Error Type         Detected    Missed     Total        Rate
------------------------------------------------------------
-SINGLE               735341         0    735341     100.00%
-CRC_PROOF             12913    718961    731874       1.76%
-FLIP_WORDS           701953      5099    707052      99.28%
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| SINGLE     | 735227 | 0 | 735227 | 100.00% |
+| CRC_PROOF  | 13008 | 705592 | 718600 | 1.81% |
+| FLIP_WORDS | 705940 | 1301 | 707241 | 99.82% |
 
-SCHEME: CRC10
-----------------------------------------------------------------------
-Error Type         Detected    Missed     Total        Rate
------------------------------------------------------------
-SINGLE               735227         0    735227     100.00%
-CRC_PROOF             13008    705592    718600       1.81%
-FLIP_WORDS           705940      1301    707241      99.82%
+### CRC16
 
-SCHEME: CRC16
-----------------------------------------------------------------------
-Error Type         Detected    Missed     Total        Rate
------------------------------------------------------------
-SINGLE               735735         8    735743     100.00%
-CRC_PROOF             13123    705316    718439       1.83%
-FLIP_WORDS           706807        20    706827     100.00%
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| SINGLE     | 735735 | 8 | 735743 | 100.00% |
+| CRC_PROOF  | 13123 | 705316 | 718439 | 1.83% |
+| FLIP_WORDS | 706807 | 20 | 706827 | 100.00% |
 
-SCHEME: CRC32
-----------------------------------------------------------------------
-Error Type         Detected    Missed     Total        Rate
------------------------------------------------------------
-SINGLE               733837         0    733837     100.00%
-CRC_PROOF                 0    676476    676476       0.00%
-FLIP_WORDS           706989         9    706998     100.00%
+### CRC32
 
-
-```
+| Error Type | Detected | Missed | Total | Rate |
+|:-----------|---------:|-------:|------:|-----:|
+| SINGLE     | 733837 | 0 | 733837 | 100.00% |
+| CRC_PROOF  | 0 | 676476 | 676476 | 0.00% |
+| FLIP_WORDS | 706989 | 9 | 706998 | 100.00% |
 
 ### 3.3 Testing Performance Improvements From Using Lookup Tables (Test 3)
 
@@ -776,315 +753,127 @@ As for test files, the test uses 7 test files of sizes 100 B, 1000 B, 9.8 KB, 98
 
 Using lookup tables:
 
-```text
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CHECKSUM~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### CHECKSUM
 
------------------ TEST #1 -----------------------
-Average time to compute CHECKSUM of frame : 0.001051 ms
-Execution time                            : 0.351923 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.001051 | 0.351923 |
+| 2 | 0.000664 | 0.327628 |
+| 3 | 0.000604 | 0.996664 |
+| 4 | 0.000614 | 2.867379 |
+| 5 | 0.000571 | 21.374509 |
+| 6 | 0.000397 | 364.488040 |
+| 7 | 0.000396 | 3910.541040 |
 
------------------ TEST #2 -----------------------
-Average time to compute CHECKSUM of frame : 0.000664 ms
-Execution time                            : 0.327628 ms
+### CRC8
 
------------------ TEST #3 -----------------------
-Average time to compute CHECKSUM of frame : 0.000604 ms
-Execution time                            : 0.996664 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.000476 | 0.349908 |
+| 2 | 0.000371 | 0.354575 |
+| 3 | 0.000453 | 1039.694107 |
+| 4 | 0.000333 | 1.705941 |
+| 5 | 0.000404 | 17.094619 |
+| 6 | 0.000266 | 297.575016 |
+| 7 | 0.000252 | 3270.501621 |
 
------------------ TEST #4 -----------------------
-Average time to compute CHECKSUM of frame : 0.000614 ms
-Execution time                            : 2.867379 ms
+### CRC10
 
------------------ TEST #5 -----------------------
-Average time to compute CHECKSUM of frame : 0.000571 ms
-Execution time                            : 21.374509 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.000832 | 0.370996 |
+| 2 | 0.000658 | 0.363085 |
+| 3 | 0.000603 | 1004.209100 |
+| 4 | 0.000734 | 3.465549 |
+| 5 | 0.000526 | 21.897861 |
+| 6 | 0.000365 | 350.648419 |
+| 7 | 0.000367 | 3893.752336 |
 
------------------ TEST #6 -----------------------
-Average time to compute CHECKSUM of frame : 0.000397 ms
-Execution time                            : 364.488040 ms
+### CRC16
 
------------------ TEST #7 -----------------------
-Average time to compute CHECKSUM of frame : 0.000396 ms
-Execution time                            : 3910.541040 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.000802 | 0.346596 |
+| 2 | 0.000655 | 0.342260 |
+| 3 | 0.000594 | 1022.412188 |
+| 4 | 0.000677 | 3.320831 |
+| 5 | 0.000618 | 25.213526 |
+| 6 | 0.000394 | 359.294923 |
+| 7 | 0.000390 | 3930.197973 |
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC8~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### CRC32
 
------------------ TEST #1 -----------------------
-Average time to compute CRC8 of frame : 0.000476 ms
-Execution time                        : 0.349908 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC8 of frame : 0.000371 ms
-Execution time                        : 0.354575 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC8 of frame : 0.000453 ms
-Execution time                        : 1039.694107 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC8 of frame : 0.000333 ms
-Execution time                        : 1.705941 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC8 of frame : 0.000404 ms
-Execution time                        : 17.094619 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC8 of frame : 0.000266 ms
-Execution time                        : 297.575016 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC8 of frame : 0.000252 ms
-Execution time                        : 3270.501621 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC10~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC10 of frame : 0.000832 ms
-Execution time                         : 0.370996 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC10 of frame : 0.000658 ms
-Execution time                         : 0.363085 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC10 of frame : 0.000603 ms
-Execution time                         : 1004.209100 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC10 of frame : 0.000734 ms
-Execution time                         : 3.465549 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC10 of frame : 0.000526 ms
-Execution time                         : 21.897861 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC10 of frame : 0.000365 ms
-Execution time                         : 350.648419 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC10 of frame : 0.000367 ms
-Execution time                         : 3893.752336 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC16~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC16 of frame : 0.000802 ms
-Execution time                         : 0.346596 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC16 of frame : 0.000655 ms
-Execution time                         : 0.342260 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC16 of frame : 0.000594 ms
-Execution time                         : 1022.412188 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC16 of frame : 0.000677 ms
-Execution time                         : 3.320831 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC16 of frame : 0.000618 ms
-Execution time                         : 25.213526 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC16 of frame : 0.000394 ms
-Execution time                         : 359.294923 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC16 of frame : 0.000390 ms
-Execution time                         : 3930.197973 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC32~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC32 of frame : 0.000707 ms
-Execution time                         : 0.353340 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC32 of frame : 0.000537 ms
-Execution time                         : 0.259533 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC32 of frame : 0.000622 ms
-Execution time                         : 1040.627661 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC32 of frame : 0.000981 ms
-Execution time                         : 3.920006 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC32 of frame : 0.000572 ms
-Execution time                         : 20.988160 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC32 of frame : 0.000518 ms
-Execution time                         : 397.249747 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC32 of frame : 0.000511 ms
-Execution time                         : 4294.477000 ms
-
-
-```
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.000707 | 0.353340 |
+| 2 | 0.000537 | 0.259533 |
+| 3 | 0.000622 | 1040.627661 |
+| 4 | 0.000981 | 3.920006 |
+| 5 | 0.000572 | 20.988160 |
+| 6 | 0.000518 | 397.249747 |
+| 7 | 0.000511 | 4294.477000 |
 
 Without using lookup table:
 
-```text
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CHECKSUM~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### CHECKSUM
 
------------------ TEST #1 -----------------------
-Average time to compute CHECKSUM of frame : 0.001142 ms
-Execution time                            : 0.536219 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.001142 | 0.536219 |
+| 2 | 0.000820 | 0.442182 |
+| 3 | 0.000584 | 0.571681 |
+| 4 | 0.000538 | 2.602446 |
+| 5 | 0.000481 | 19.188892 |
+| 6 | 0.000375 | 359.514020 |
+| 7 | 0.000376 | 3949.537336 |
 
------------------ TEST #2 -----------------------
-Average time to compute CHECKSUM of frame : 0.000820 ms
-Execution time                            : 0.442182 ms
+### CRC8
 
------------------ TEST #3 -----------------------
-Average time to compute CHECKSUM of frame : 0.000584 ms
-Execution time                            : 0.571681 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.006350 | 0.339480 |
+| 2 | 0.005327 | 0.410528 |
+| 3 | 0.005110 | 1055.471680 |
+| 4 | 0.005608 | 14.366835 |
+| 5 | 0.004380 | 107.750454 |
+| 6 | 0.004290 | 1887.449566 |
+| 7 | 0.004286 | 20429.668713 |
 
------------------ TEST #4 -----------------------
-Average time to compute CHECKSUM of frame : 0.000538 ms
-Execution time                            : 2.602446 ms
+### CRC10
 
------------------ TEST #5 -----------------------
-Average time to compute CHECKSUM of frame : 0.000481 ms
-Execution time                            : 19.188892 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.007684 | 0.325985 |
+| 2 | 0.006687 | 0.537356 |
+| 3 | 0.006344 | 1029.209876 |
+| 4 | 0.006524 | 16.136683 |
+| 5 | 0.004905 | 119.244827 |
+| 6 | 0.004849 | 2222.263307 |
+| 7 | 0.004831 | 24029.052172 |
 
------------------ TEST #6 -----------------------
-Average time to compute CHECKSUM of frame : 0.000375 ms
-Execution time                            : 359.514020 ms
+### CRC16
 
------------------ TEST #7 -----------------------
-Average time to compute CHECKSUM of frame : 0.000376 ms
-Execution time                            : 3949.537336 ms
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.007358 | 0.322628 |
+| 2 | 0.006253 | 0.422646 |
+| 3 | 0.006024 | 1050.396167 |
+| 4 | 0.006697 | 16.699722 |
+| 5 | 0.004875 | 118.359566 |
+| 6 | 0.004840 | 2218.073403 |
+| 7 | 0.004843 | 24023.149638 |
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC8~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### CRC32
 
------------------ TEST #1 -----------------------
-Average time to compute CRC8 of frame : 0.006350 ms
-Execution time                        : 0.339480 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC8 of frame : 0.005327 ms
-Execution time                        : 0.410528 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC8 of frame : 0.005110 ms
-Execution time                        : 1055.471680 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC8 of frame : 0.005608 ms
-Execution time                        : 14.366835 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC8 of frame : 0.004380 ms
-Execution time                        : 107.750454 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC8 of frame : 0.004290 ms
-Execution time                        : 1887.449566 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC8 of frame : 0.004286 ms
-Execution time                        : 20429.668713 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC10~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC10 of frame : 0.007684 ms
-Execution time                         : 0.325985 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC10 of frame : 0.006687 ms
-Execution time                         : 0.537356 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC10 of frame : 0.006344 ms
-Execution time                         : 1029.209876 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC10 of frame : 0.006524 ms
-Execution time                         : 16.136683 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC10 of frame : 0.004905 ms
-Execution time                         : 119.244827 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC10 of frame : 0.004849 ms
-Execution time                         : 2222.263307 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC10 of frame : 0.004831 ms
-Execution time                         : 24029.052172 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC16~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC16 of frame : 0.007358 ms
-Execution time                         : 0.322628 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC16 of frame : 0.006253 ms
-Execution time                         : 0.422646 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC16 of frame : 0.006024 ms
-Execution time                         : 1050.396167 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC16 of frame : 0.006697 ms
-Execution time                         : 16.699722 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC16 of frame : 0.004875 ms
-Execution time                         : 118.359566 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC16 of frame : 0.004840 ms
-Execution time                         : 2218.073403 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC16 of frame : 0.004843 ms
-Execution time                         : 24023.149638 ms
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CRC32~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
------------------ TEST #1 -----------------------
-Average time to compute CRC32 of frame : 0.006369 ms
-Execution time                         : 0.316816 ms
-
------------------ TEST #2 -----------------------
-Average time to compute CRC32 of frame : 0.005794 ms
-Execution time                         : 0.529864 ms
-
------------------ TEST #3 -----------------------
-Average time to compute CRC32 of frame : 0.005112 ms
-Execution time                         : 1057.009828 ms
-
------------------ TEST #4 -----------------------
-Average time to compute CRC32 of frame : 0.005982 ms
-Execution time                         : 15.094713 ms
-
------------------ TEST #5 -----------------------
-Average time to compute CRC32 of frame : 0.004710 ms
-Execution time                         : 115.286979 ms
-
------------------ TEST #6 -----------------------
-Average time to compute CRC32 of frame : 0.004621 ms
-Execution time                         : 1976.172531 ms
-
------------------ TEST #7 -----------------------
-Average time to compute CRC32 of frame : 0.004608 ms
-Execution time                         : 21306.275812 ms
-
-
-```
+| Test | Average Time to Compute (ms) | Execution Time (ms) |
+|:----:|-----------------------------:|--------------------:|
+| 1 | 0.006369 | 0.316816 |
+| 2 | 0.005794 | 0.529864 |
+| 3 | 0.005112 | 1057.009828 |
+| 4 | 0.005982 | 15.094713 |
+| 5 | 0.004710 | 115.286979 |
+| 6 | 0.004621 | 1976.172531 |
+| 7 | 0.004608 | 21306.275812 |
 
 ## 4. Analysis and Conclusion
 
