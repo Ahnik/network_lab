@@ -43,22 +43,22 @@ assignment-1/
 │   ├── receiver.c              # Receiver program
 │   ├── evaluator.c             # Sender program for evaluation of errors
 │   ├── common.c                # Implementation of common functions
-│   ├── crc.c                   # CRC-8, CRC-10, CRC-16, CRC-32 implementations along with CRC tables
+│   ├── crc.c                   # CRC-8, CRC-10, CRC-16, CRC-32
 │   └── error_injector.c        # Error injection function implementations
 ├── bin/                        # Compiled binaries and object files
-├── logs/                       # Output logs from sender and receiver (for accuracy analysis)
+├── logs/                       # Output logs from sender and receiver
 ├── tests/                      # All test files
 ├── Makefile                    # Build system
-├── run_tests.sh                # Bash script for running performance tests for a given error detection scheme
-├── run_all_tests.sh            # Bash script for running performance tests for all error detection schemes
-├── analyze_evaluator_logs.py   # Python script to generate statistics for the evaluator
-└── analyze_logs.py             # Python script to generate statistics on the accuracy of each of the schemes
+├── run_tests.sh                
+├── run_all_tests.sh            # For running performance tests
+├── analyze_evaluator_logs.py   # Generate statistics for evaluator
+└── analyze_logs.py             # Generate error detection statistics
 ```
 
 **Data Flow:**
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Sender [Sender]
         direction TB
         A["Input file"] --> B["Create CRC table"]
@@ -75,22 +75,22 @@ flowchart LR
         H --> K
         I --> K
         J --> K
-        K --> L["Send the total number of frames to receiver as a 4-byte header"]
-        L --> M["Send all frames to receiver one by one"]
+        K --> L["Send 4-byte header"]
+        L --> M["Send frames to receiver"]
     end
+
+    M -- "Network" --> N
 
     subgraph Receiver [Receiver]
         direction TB
-        N["Listen for incoming connection requests"] --> O["Receive 4-byte header from sender"]
-        O --> P["Dynamically allocate memory for the data"]
-        P --> Q["Receive all frames from sender"]
+        N["Listen for incoming requests"] --> O["Receive header"]
+        O --> P["Allocate memory for frames"]
+        P --> Q["Receive all frames"]
         Q --> R["Recompute FCS"]
         R --> S{"Result = 0?"}
         S -- "Yes" --> T["VALID"]
         S -- "No" --> U["CORRUPTED"]
     end
-
-    M -- "Network" --> N
 ```
 
 ### 1.3 Frame Structure
@@ -892,6 +892,11 @@ For similar reasons, error injection is only limited to header and payload in ot
 ### 4.3 Testing Performance Improvements From Using Lookup Tables (Test 3)
 
 From the data on this test, the use of lookup tables has reduced the CRC computation time per frame by approximately 89.9% and total program execution time by approximately 82.3% across CRC-8, CRC-10, CRC-16 and CRC-32, which clearly demonstrates the advantage of using lookup tables. There is no improvements in checksum calculation performance as there is no use of lookup tables for checksum calculation.
+
+### 4.4 Scope for Further Improvements
+- Since this project utilises POSIX sockets, it can only run on POSIX-compatible systems. A potential improvement is to add support for other APIs, like Windows sockets API to make the project more cross-platform.
+- The statistics generated can be generated in a more standard format like csv to make data analysis easier.
+- Adding more data visualization using tools like matplotlib.
 
 ## 5. Comments
 
