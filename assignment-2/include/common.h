@@ -22,7 +22,7 @@ typedef struct {
     uint8_t  sender_addr[MAC_ADDRESS_SIZE];     // Sender address
     uint8_t  receiver_addr[MAC_ADDRESS_SIZE];   // Receiver address
     uint16_t length;                            // The length of the payload
-    uint8_t seq_no;                             // Frame sequence number
+    uint8_t  seq_no;                            // Frame sequence number
 } Header;
 #pragma pack(pop)
 
@@ -56,5 +56,11 @@ uint32_t read_payload_len(int socketfd);
 
 // Function to open a file, read it, chunk it into packets and return the first packet
 Frame *chunk_file(const char *filename, uint32_t *num_of_frames);
+
+// Function to create the CRC-32 lookup table
+void create_crc32_table();
+
+// Function to compute CRC-32 of a buffer
+uint32_t compute_crc32(const uint8_t *buffer, size_t size);
 
 #endif

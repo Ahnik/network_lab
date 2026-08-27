@@ -14,7 +14,7 @@
 int main(int argc, char **argv) {
     /* argv[1] = Error detection code, argv[2] = IP address, argv[3] = file */
     if (argc < 4) {
-        printf("Usage: ./main.out <filename>\n");
+        printf("Usage: ./main.out <error_code> <IP address> <filename>\n");
         return -1;
     }
 
