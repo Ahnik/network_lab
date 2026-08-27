@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
         total_bytes_sent += bytes_sent;
     }
 
+    /* Implement the Stop-and-Wait sender-side logic here */
     // Sending the total message to the receiver
     total_bytes_sent = 0;
     ssize_t total_size = total_frames * FRAME_SIZE;
