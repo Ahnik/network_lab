@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define INJECT_ERROR    /* Comment this line if you don't want to inject error */
+
 #include <stdint.h>
 #include <limits.h>
 #include <stddef.h>
@@ -20,13 +22,13 @@ typedef struct {
     uint8_t  sender_addr[MAC_ADDRESS_SIZE];     // Sender address
     uint8_t  receiver_addr[MAC_ADDRESS_SIZE];   // Receiver address
     uint16_t length;                            // The length of the payload
-    uint16_t type;                              // The type of error detection used
+    uint8_t seq_no;                             // Frame sequence number
 } Header;
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef union {
-    uint8_t crc[4];         // CRC bits
+typedef struct {
+    uint8_t fcs[4];         // Frame check sequence (CRC-32 bytes)
 } Trailer;
 #pragma pack(pop)
 
