@@ -42,6 +42,13 @@ typedef struct {
 } Frame;
 #pragma pack(pop)
 
+#pragma pack(push, 1)
+typedef struct {
+    uint8_t frame_type;
+    uint8_t ack_no;
+} AckFrame;
+#pragma pack(pop)
+
 // Lookup table for calculating CRC-32
 static uint32_t crc32_table[CRC_TABLE_SIZE];
 
@@ -62,5 +69,11 @@ void create_crc32_table();
 
 // Function to compute CRC-32 of a buffer
 uint32_t compute_crc32(const uint8_t *buffer, size_t size);
+
+// Function to send a frame
+void send_frame(const Frame *frame, int receiver_socket);
+
+// Function to send an ACK frame
+void send_ack(int ack_no, int receiver_socket);
 
 #endif

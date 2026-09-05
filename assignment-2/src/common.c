@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -111,4 +112,29 @@ uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
         crc = (crc << 8) ^ crc32_table[pos];
     }
     return crc;
+}
+
+void send_frame(const Frame *frame, int receiver_socket) {
+    ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < FRAME_SIZE) {
+        ssize_t bytes_sent = send(receiver_socket, frame + total_bytes_sent, FRAME_SIZE - total_bytes_sent, 0);
+        if (bytes_sent < 0)
+            exit_with_error("Send Failed!");
+        total_bytes_sent += bytes_sent;
+    }
+}
+
+void send_ack(int ack_no, int receiver_socket) {
+    AckFrame *frame = (AckFrame *) malloc(sizeof(AckFrame));
+    if (frame == NULL) return;
+    frame->frame_type = 0xFF;
+    frame->ack_no = ack_no;
+
+    ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < sizeof(AckFrame)) {
+        ssize_t bytes_sent = send(receiver_socket, frame + total_bytes_sent, FRAME_SIZE - total_bytes_sent, 0);
+        if (bytes_sent < 0)
+            exit_with_error("Send Failed!");
+        total_bytes_sent += bytes_sent;
+    }
 }

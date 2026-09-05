@@ -95,15 +95,15 @@ int main(int argc, char **argv) {
 
     /* Implement the Stop-and-Wait sender-side logic here */
     // Sending the total message to the receiver
-    total_bytes_sent = 0;
-    ssize_t total_size = total_frames * FRAME_SIZE;
-    buffer_ptr = (uint8_t *) frame_buffer;
-    while (total_bytes_sent < total_size) {
-        ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, total_size - total_bytes_sent, 0);
-        if (bytes_sent < 0)
-            exit_with_error("Send Failed!");
-        total_bytes_sent += bytes_sent;
-    }
+    // total_bytes_sent = 0;
+    // ssize_t total_size = total_frames * FRAME_SIZE;
+    // buffer_ptr = (uint8_t *) frame_buffer;
+    // while (total_bytes_sent < total_size) {
+    //     ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, total_size - total_bytes_sent, 0);
+    //     if (bytes_sent < 0)
+    //         exit_with_error("Send Failed!");
+    //     total_bytes_sent += bytes_sent;
+    // }
     close(receiver_socket);
     free(frame_buffer);
 
