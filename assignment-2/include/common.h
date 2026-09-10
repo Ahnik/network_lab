@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define INJECT_ERROR    /* Comment this line if you don't want to inject error */
+// #define INJECT_ERROR    /* Comment this line if you don't want to inject error */
 
 #include <stdint.h>
 #include <limits.h>
@@ -13,6 +13,7 @@
 #define FRAME_SIZE       64        // Size of frame in bytes
 #define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
 #define HEADER_SIZE       4        // Size of the header containing length
+#define ACK_SIZE          6        // Size of an ACK frame
 
 #define CRC32_GENERATOR 0x04C11DB7
 #define CRC_TABLE_SIZE (2 << 8)
@@ -46,6 +47,7 @@ typedef struct {
 typedef struct {
     uint8_t frame_type;
     uint8_t ack_no;
+    uint8_t fcs[4];
 } AckFrame;
 #pragma pack(pop)
 
@@ -74,6 +76,15 @@ uint32_t compute_crc32(const uint8_t *buffer, size_t size);
 void send_frame(const Frame *frame, int receiver_socket);
 
 // Function to send an ACK frame
-void send_ack(int ack_no, int receiver_socket);
+void send_ack(int ack_no, int sender_socket);
+
+// Function to receive a frame
+void receive_frame(Frame *frame, int sender_socket);
+
+// Function to receive an ACK frame
+void receive_ack(AckFrame *buffer, int receiver_socket);
+
+// Function to receive a frame with timeout
+int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms);
 
 #endif

@@ -7,6 +7,6 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 // Thread function for running the timer
-void *timer_thread(void *arg);
+void *timer_thread_function(void *arg);
 
 #endif

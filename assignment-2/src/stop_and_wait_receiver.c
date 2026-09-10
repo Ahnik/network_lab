@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,9 +7,18 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #include "common.h"
 
 int main() {
+    // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+
+    sigaction(SIGPIPE, &sa, NULL);
+
     // Create the CRC lookup tables
     create_crc32_table();
 
@@ -51,22 +62,24 @@ int main() {
         if (frame_buffer == NULL)
             exit_with_error("Memory allocation error!");
 
+        uint8_t seq_no = 0;
         for (uint32_t i = 0; i < total_frames; i++) {
-            uint8_t *frame_ptr = (uint8_t *) &frame_buffer[i];
-            ssize_t total_bytes_read = 0;
-            while (total_bytes_read < FRAME_SIZE) {
-                ssize_t bytes_read = recv(sender_socket, frame_ptr + total_bytes_read, FRAME_SIZE - total_bytes_read, 0);
-                if (bytes_read <= 0)
-                    exit_with_error("recv failed!");
-                total_bytes_read += bytes_read;
-            }
+            int count = 0;
+            do {
+                if (count++ > 0) {
+                    send_ack(seq_no, sender_socket);
+                    printf("ACK %d sent!\n", seq_no);
+                }
+                receive_frame(&frame_buffer[i], sender_socket);
+            } while (
+                compute_crc32((uint8_t *) &frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) != 0 || 
+                seq_no != frame_buffer[i].header.seq_no
+            );
 
-            /* TODO: Implement logic to discard the frame if it is corrupted and send ACK */
-            printf("--- FRAME #%u ---\n", i+1);
-            if (compute_crc32(&frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) == 0)
-                printf("VALID\n");
-            else
-                printf("CORRUPTED\n");
+            printf("Frame #%u received! Seq no - %d! Count %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+            seq_no = (seq_no + 1) % 2;
+            send_ack(seq_no, sender_socket);
+            printf("ACK %d sent!\n", seq_no);
         }
         close(sender_socket);
         free(frame_buffer);

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "timer.h"
 
-void *timer_thread(void *arg) {
+void *timer_thread_function(void *arg) {
     // Time for which the timer counts is passed as argument
     long delay_ms = *((long *) arg);
 

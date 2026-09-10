@@ -33,3 +33,22 @@ void inject_burst_error(uint8_t *buffer, unsigned int size) {
         buffer[pos >> 3] ^= 1 << (pos % 8);
     }
 }
+
+void inject_error(Frame *frame) {
+    ErrorType error;
+    error = rand() % ERROR_NUM;
+    switch (error) {
+        case SINGLE_BIT:
+            inject_single_bit_error((uint8_t *) frame, FRAME_SIZE);
+            break;
+        case TWO_ISOLATED:
+            inject_two_isolated_error((uint8_t *) frame, FRAME_SIZE);
+            break;
+        case ODD_ERRORS:
+            inject_odd_errors((uint8_t *) frame, FRAME_SIZE);
+            break;
+        case BURST:
+            inject_burst_error((uint8_t *) frame, FRAME_SIZE);
+            break;
+    }
+}

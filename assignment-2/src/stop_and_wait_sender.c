@@ -1,18 +1,34 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>
 #include "common.h"
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms */
-    if (argc < 4) {
+    /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms, argv[4] = timeout_ms */
+    if (argc < 5) {
         printf("Usage: ./main.out <IP address> <file> <max_delay_ms>\n");
         return 1;
     }
+
+    // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+
+    sigaction(SIGPIPE, &sa, NULL);
+
+    // Set the max delay and timer
+    int timeout_ms = atoi(argv[4]);
+    int max_delay_ms = atoi(argv[3]);
 
     // Create CRC-32 table
     create_crc32_table();
@@ -22,47 +38,7 @@ int main(int argc, char **argv) {
 
     // Chunk the input file into frames
     uint32_t total_frames = 0;
-    Frame *frame_buffer = chunk_file(argv[3], &total_frames);
-
-    for (uint32_t i = 0; i < total_frames; i++) {
-        input_mac_address(&frame_buffer[i]);
-
-        uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
-        frame_buffer[i].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
-        frame_buffer[i].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
-        frame_buffer[i].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
-        frame_buffer[i].trailer.fcs[3] = (uint8_t) (crc32);
-    }
-
-#ifdef INJECT_ERROR
-    // Inject an error
-    ErrorType error;
-    for (uint32_t i = 0; i < total_frames; i++) {
-        printf("--- FRAME #%u ---\n", i+1);
-        error = rand() % ERROR_NUM;
-        printf("ERROR: ");
-        switch (error) {
-            case SINGLE_BIT:
-                inject_single_bit_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("SINGLE\n");
-                break;
-            case TWO_ISOLATED:
-                inject_two_isolated_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("ISOLATED\n");
-                break;
-            case ODD_ERRORS:
-                inject_odd_errors((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("ODD\n");
-                break;
-            case BURST:
-                inject_burst_error((uint8_t *) &frame_buffer[i], FRAME_SIZE);
-                printf("BURST\n");
-                break;
-            case NO_ERROR:
-                printf("NONE\n");
-        }
-    }
-#endif
+    Frame *frame_buffer = chunk_file(argv[2], &total_frames);
 
     // Create the socket to communicate with the receiver
     int receiver_socket;
@@ -75,7 +51,7 @@ int main(int argc, char **argv) {
     receiver_addr.sin_family = AF_INET;
     receiver_addr.sin_port   = htons(RECEIVER_PORT);
 
-    if (inet_pton(AF_INET, argv[2], &receiver_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, argv[1], &receiver_addr.sin_addr) <= 0)
         exit_with_error("inet_pton error for %s!", argv[1]);
 
     // Try to connect to the receiver
@@ -94,16 +70,49 @@ int main(int argc, char **argv) {
     }
 
     /* Implement the Stop-and-Wait sender-side logic here */
-    // Sending the total message to the receiver
-    // total_bytes_sent = 0;
-    // ssize_t total_size = total_frames * FRAME_SIZE;
-    // buffer_ptr = (uint8_t *) frame_buffer;
-    // while (total_bytes_sent < total_size) {
-    //     ssize_t bytes_sent = send(receiver_socket, buffer_ptr + total_bytes_sent, total_size - total_bytes_sent, 0);
-    //     if (bytes_sent < 0)
-    //         exit_with_error("Send Failed!");
-    //     total_bytes_sent += bytes_sent;
-    // }
+    uint8_t seq_no = 0;
+    AckFrame ack;
+    memset(&ack, 0, ACK_SIZE);
+
+    for (uint32_t i = 0; i < total_frames; i++) {
+        frame_buffer[i].header.seq_no = seq_no;
+        input_mac_address(&frame_buffer[i]);
+
+        uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+        frame_buffer[i].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
+        frame_buffer[i].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
+        frame_buffer[i].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
+        frame_buffer[i].trailer.fcs[3] = (uint8_t) (crc32);
+
+        // Sleep for a random interval of time to introduce delay
+        // struct timespec ts;
+        // int delay_ms = rand() % max_delay_ms;
+        // ts.tv_sec = delay_ms / 1000;
+        // ts.tv_nsec = (delay_ms % 1000) * 1000000L;
+        // nanosleep(&ts, NULL);
+
+        seq_no = (seq_no + 1) % 2;
+        int ret = 0;
+        int count = 0;
+
+        do {
+            count++;
+            send_frame(&frame_buffer[i], receiver_socket);
+            printf("Frame #%u sent! Seq no - %d! Count %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+            ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
+            if (ret > 0) {
+                if (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no) {
+                    printf("Invalid ACK! ACK discarded!\n");
+                    printf("ACK number is %d!\n", ack.ack_no);
+                    ret = 0;
+                } else
+                    printf("ACK %d received!\n", ack.ack_no);
+            }
+        } while (ret == 0);
+        // printf("--- FRAME #%u ---\n", i+1);
+        // printf("Number of trials: %d\n", count);
+    }
+
     close(receiver_socket);
     free(frame_buffer);
 
