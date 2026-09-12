@@ -34,21 +34,42 @@ void inject_burst_error(uint8_t *buffer, unsigned int size) {
     }
 }
 
-void inject_error(Frame *frame) {
+void inject_error(uint8_t *frame, size_t length) {
     ErrorType error;
     error = rand() % ERROR_NUM;
     switch (error) {
         case SINGLE_BIT:
-            inject_single_bit_error((uint8_t *) frame, FRAME_SIZE);
+            inject_single_bit_error(frame, length);
             break;
         case TWO_ISOLATED:
-            inject_two_isolated_error((uint8_t *) frame, FRAME_SIZE);
+            inject_two_isolated_error(frame, length);
             break;
         case ODD_ERRORS:
-            inject_odd_errors((uint8_t *) frame, FRAME_SIZE);
+            inject_odd_errors(frame, length);
             break;
         case BURST:
-            inject_burst_error((uint8_t *) frame, FRAME_SIZE);
+            inject_burst_error(frame, length);
+            break;
+        case NO_ERROR:
+            break;
+        case ERROR_NUM:
             break;
     }
+}
+
+void send_ack_with_error(int ack_no, int sender_socket) {
+    AckFrame frame;
+    frame.frame_type = 0xFF;
+    frame.ack_no = ack_no;
+    uint32_t crc32 = compute_crc32((uint8_t *) &frame, ACK_SIZE - 4);
+    frame.fcs[0] = (uint8_t) (crc32 >> 24);
+    frame.fcs[1] = (uint8_t) (crc32 >> 16);
+    frame.fcs[2] = (uint8_t) (crc32 >> 8);
+    frame.fcs[3] = (uint8_t) (crc32);
+
+#ifdef INJECT_ERROR
+    inject_error((uint8_t *) &frame, ACK_SIZE);
+#endif
+
+    send_from_buffer((uint8_t *) &frame, ACK_SIZE, sender_socket);
 }

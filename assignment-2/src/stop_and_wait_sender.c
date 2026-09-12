@@ -7,24 +7,15 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <signal.h>
 #include "common.h"
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
     /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms, argv[4] = timeout_ms */
     if (argc < 5) {
-        printf("Usage: ./main.out <IP address> <file> <max_delay_ms>\n");
+        printf("Usage: ./stop_and_wait_sender <IP address> <file> <max_delay_ms>\n");
         return 1;
     }
-
-    // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = SIG_IGN;
-    sa.sa_flags = 0;
-
-    sigaction(SIGPIPE, &sa, NULL);
 
     // Set the max delay and timer
     int timeout_ms = atoi(argv[4]);
@@ -84,21 +75,22 @@ int main(int argc, char **argv) {
         frame_buffer[i].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
         frame_buffer[i].trailer.fcs[3] = (uint8_t) (crc32);
 
-        // Sleep for a random interval of time to introduce delay
-        // struct timespec ts;
-        // int delay_ms = rand() % max_delay_ms;
-        // ts.tv_sec = delay_ms / 1000;
-        // ts.tv_nsec = (delay_ms % 1000) * 1000000L;
-        // nanosleep(&ts, NULL);
-
         seq_no = (seq_no + 1) % 2;
         int ret = 0;
         int count = 0;
 
+        // Copy the current frame
+        Frame temp_frame;
+
         do {
             count++;
-            send_frame(&frame_buffer[i], receiver_socket);
-            printf("Frame #%u sent! Seq no - %d! Count %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+            memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
+#ifdef INJECT_ERROR
+            inject_error((uint8_t *) &temp_frame, FRAME_SIZE);
+#endif
+            inject_random_delay(max_delay_ms);
+            send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
+            printf("Frame #%u sent! Seq no - %d! Count %d!\n", i+1, temp_frame.header.seq_no, count);
             ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
             if (ret > 0) {
                 if (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no) {
@@ -109,8 +101,6 @@ int main(int argc, char **argv) {
                     printf("ACK %d received!\n", ack.ack_no);
             }
         } while (ret == 0);
-        // printf("--- FRAME #%u ---\n", i+1);
-        // printf("Number of trials: %d\n", count);
     }
 
     close(receiver_socket);

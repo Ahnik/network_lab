@@ -12,11 +12,11 @@ STOP_AND_WAIT_RECEIVER	= $(SRC_DIR)/stop_and_wait_receiver.c
 
 # Main source files
 STOP_AND_WAIT_SENDER_SRC   = $(COMMON) $(ERROR_INJECTOR) $(STOP_AND_WAIT_SENDER)
-STOP_AND_WAIT_RECEIVER_SRC = $(COMMON) $(STOP_AND_WAIT_RECEIVER)
+STOP_AND_WAIT_RECEIVER_SRC = $(COMMON) $(ERROR_INJECTOR) $(STOP_AND_WAIT_RECEIVER)
 
 # Binary files
-STOP_AND_WAIT_SENDER_BIN	= $(BIN_DIR)/stop_and_wait_sender.out
-STOP_AND_WAIT_RECEIVER_BIN	= $(BIN_DIR)/stop_and_wait_receiver.out
+STOP_AND_WAIT_SENDER_BIN	= $(BIN_DIR)/stop_and_wait_sender
+STOP_AND_WAIT_RECEIVER_BIN	= $(BIN_DIR)/stop_and_wait_receiver
 
 # Targets
 .PHONY: all clean build

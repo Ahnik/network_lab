@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// #define INJECT_ERROR    /* Comment this line if you don't want to inject error */
+#define INJECT_ERROR    /* Comment this line if you don't want to inject error */
 
 #include <stdint.h>
 #include <limits.h>
@@ -72,19 +72,16 @@ void create_crc32_table();
 // Function to compute CRC-32 of a buffer
 uint32_t compute_crc32(const uint8_t *buffer, size_t size);
 
-// Function to send a frame
-void send_frame(const Frame *frame, int receiver_socket);
+// Function to send data from a buffer
+void send_from_buffer(uint8_t *buffer, long size, int socket);
 
-// Function to send an ACK frame
-void send_ack(int ack_no, int sender_socket);
-
-// Function to receive a frame
-void receive_frame(Frame *frame, int sender_socket);
-
-// Function to receive an ACK frame
-void receive_ack(AckFrame *buffer, int receiver_socket);
+// Function to receive data into a buffer
+void receive_in_buffer(uint8_t *buffer, long size, int socket);
 
 // Function to receive a frame with timeout
 int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms);
+
+// Function to inject delay
+void inject_random_delay(int max_delay_ms);
 
 #endif

@@ -9,14 +9,22 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include "common.h"
+#include "error_injector.h"
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage: ./stop_and_wait_receiver <max_delay_ms>\n");
+        return 1;
+    }
+
+    // Set the max delay
+    int max_delay_ms = atoi(argv[1]);
+
     // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = SIG_IGN;
     sa.sa_flags = 0;
-
     sigaction(SIGPIPE, &sa, NULL);
 
     // Create the CRC lookup tables
@@ -67,10 +75,11 @@ int main() {
             int count = 0;
             do {
                 if (count++ > 0) {
-                    send_ack(seq_no, sender_socket);
+                    inject_random_delay(max_delay_ms);
+                    send_ack_with_error(seq_no, sender_socket);
                     printf("ACK %d sent!\n", seq_no);
                 }
-                receive_frame(&frame_buffer[i], sender_socket);
+                receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket);
             } while (
                 compute_crc32((uint8_t *) &frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) != 0 || 
                 seq_no != frame_buffer[i].header.seq_no
@@ -78,7 +87,8 @@ int main() {
 
             printf("Frame #%u received! Seq no - %d! Count %d!\n", i+1, frame_buffer[i].header.seq_no, count);
             seq_no = (seq_no + 1) % 2;
-            send_ack(seq_no, sender_socket);
+            inject_random_delay(max_delay_ms);
+            send_ack_with_error(seq_no, sender_socket);
             printf("ACK %d sent!\n", seq_no);
         }
         close(sender_socket);

@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "common.h"
 #include <stdarg.h>
 #include <errno.h>
@@ -7,6 +9,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <poll.h>
+#include <time.h>
 
 void exit_with_error(const char *fmt, ...) {
     int errno_save = errno;
@@ -115,55 +118,20 @@ uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
     return crc;
 }
 
-void send_frame(const Frame *frame, int receiver_socket) {
-    ssize_t total_bytes_sent = 0;
-    const uint8_t *ptr = (uint8_t *) frame;
-    while (total_bytes_sent < FRAME_SIZE) {
-        ssize_t bytes_sent = send(receiver_socket, ptr + total_bytes_sent, FRAME_SIZE - total_bytes_sent, 0);
-        if (bytes_sent < 0)
-            exit_with_error("Send Failed!");
+void send_from_buffer(uint8_t *buffer, long size, int socket) {
+    long total_bytes_sent = 0;
+    while (total_bytes_sent < size) {
+        long bytes_sent = send(socket, buffer + total_bytes_sent, size - total_bytes_sent, 0);
+        if (bytes_sent <= 0)
+            exit_with_error("send failed!");
         total_bytes_sent += bytes_sent;
     }
 }
 
-void send_ack(int ack_no, int sender_socket) {
-    AckFrame *frame = (AckFrame *) malloc(sizeof(AckFrame));
-    if (frame == NULL) return;
-    memset(frame, 0, ACK_SIZE);
-    frame->frame_type = 0xFF;
-    frame->ack_no = ack_no;
-    uint32_t crc32 = compute_crc32((uint8_t *) frame, ACK_SIZE - 4);
-    frame->fcs[0] = (uint8_t) (crc32 >> 24);
-    frame->fcs[1] = (uint8_t) (crc32 >> 16);
-    frame->fcs[2] = (uint8_t) (crc32 >> 8);
-    frame->fcs[3] = (uint8_t) (crc32);
-
-    ssize_t total_bytes_sent = 0;
-    uint8_t *ptr = (uint8_t *) frame;
-    while (total_bytes_sent < ACK_SIZE) {
-        ssize_t bytes_sent = send(sender_socket, ptr + total_bytes_sent, ACK_SIZE - total_bytes_sent, 0);
-        if (bytes_sent < 0)
-            exit_with_error("Send Failed!");
-        total_bytes_sent += bytes_sent;
-    }
-}
-
-void receive_frame(Frame *frame, int sender_socket) {
-    ssize_t total_bytes_read = 0;
-    uint8_t *ptr = (uint8_t *) frame;
-    while (total_bytes_read < FRAME_SIZE) {
-        ssize_t bytes_read = recv(sender_socket, ptr + total_bytes_read, FRAME_SIZE - total_bytes_read, 0);
-        if (bytes_read <= 0)
-            exit_with_error("recv failed!");
-        total_bytes_read += bytes_read;
-    }
-}
-
-void receive_ack(AckFrame *buffer, int receiver_socket) {
-    ssize_t total_bytes_read = 0;
-    uint8_t *ptr = (uint8_t *) buffer;
-    while (total_bytes_read < ACK_SIZE) {
-        ssize_t bytes_read = recv(receiver_socket, ptr + total_bytes_read, ACK_SIZE - total_bytes_read, 0);
+void receive_in_buffer(uint8_t *buffer, long size, int socket) {
+    long total_bytes_read = 0;
+    while (total_bytes_read < size) {
+        long bytes_read = recv(socket, buffer + total_bytes_read, size - total_bytes_read, 0);
         if (bytes_read <= 0)
             exit_with_error("recv failed!");
         total_bytes_read += bytes_read;
@@ -181,6 +149,14 @@ int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_
     else if (ret == 0)
         return 0;
 
-    receive_ack(buffer, receiver_socket);
+    receive_in_buffer((uint8_t *) buffer, ACK_SIZE, receiver_socket);
     return 1;
+}
+
+void inject_random_delay(int max_delay_ms) {
+    struct timespec ts;
+    int delay_ms = rand() % max_delay_ms;
+    ts.tv_sec = delay_ms / 1000;
+    ts.tv_nsec = (delay_ms % 1000) * 1000000L;
+    nanosleep(&ts, NULL);
 }
