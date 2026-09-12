@@ -77,20 +77,20 @@ int main(int argc, char **argv) {
                 if (count++ > 0) {
                     inject_random_delay(max_delay_ms);
                     send_ack_with_error(seq_no, sender_socket);
-                    printf("ACK %d sent!\n", seq_no);
                 }
-                receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket);
+                if (receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket) != 0) goto cleanup;
             } while (
                 compute_crc32((uint8_t *) &frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) != 0 || 
                 seq_no != frame_buffer[i].header.seq_no
             );
 
-            printf("Frame #%u received! Seq no - %d! Count %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+            printf("Frame #%u received! Seq no - %d! No. of ACK transmissions- %d!\n", i+1, frame_buffer[i].header.seq_no, count);
             seq_no = (seq_no + 1) % 2;
             inject_random_delay(max_delay_ms);
             send_ack_with_error(seq_no, sender_socket);
-            printf("ACK %d sent!\n", seq_no);
         }
+
+cleanup:
         close(sender_socket);
         free(frame_buffer);
     }

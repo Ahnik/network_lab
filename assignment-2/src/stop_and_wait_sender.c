@@ -89,18 +89,15 @@ int main(int argc, char **argv) {
             inject_error((uint8_t *) &temp_frame, FRAME_SIZE);
 #endif
             inject_random_delay(max_delay_ms);
-            send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
-            printf("Frame #%u sent! Seq no - %d! Count %d!\n", i+1, temp_frame.header.seq_no, count);
+            if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) != 0)
+                exit_with_error("send failed!");
+
             ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
-            if (ret > 0) {
-                if (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no) {
-                    printf("Invalid ACK! ACK discarded!\n");
-                    printf("ACK number is %d!\n", ack.ack_no);
-                    ret = 0;
-                } else
-                    printf("ACK %d received!\n", ack.ack_no);
-            }
+            if (ret > 0 && (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no))
+                ret = 0;
         } while (ret == 0);
+
+        printf("Frame #%u successfully received! Seq no - %d! No. of frame transmissions - %d!\n", i+1, frame_buffer[i].header.seq_no, count);
     }
 
     close(receiver_socket);

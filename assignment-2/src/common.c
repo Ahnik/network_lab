@@ -118,24 +118,26 @@ uint32_t compute_crc32(const uint8_t *buffer, size_t size) {
     return crc;
 }
 
-void send_from_buffer(uint8_t *buffer, long size, int socket) {
+int send_from_buffer(uint8_t *buffer, long size, int socket) {
     long total_bytes_sent = 0;
     while (total_bytes_sent < size) {
         long bytes_sent = send(socket, buffer + total_bytes_sent, size - total_bytes_sent, 0);
         if (bytes_sent <= 0)
-            exit_with_error("send failed!");
+            return -1;
         total_bytes_sent += bytes_sent;
     }
+    return 0;
 }
 
-void receive_in_buffer(uint8_t *buffer, long size, int socket) {
+int receive_in_buffer(uint8_t *buffer, long size, int socket) {
     long total_bytes_read = 0;
     while (total_bytes_read < size) {
         long bytes_read = recv(socket, buffer + total_bytes_read, size - total_bytes_read, 0);
         if (bytes_read <= 0)
-            exit_with_error("recv failed!");
+            return -1;
         total_bytes_read += bytes_read;
     }
+    return 0;
 }
 
 int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms) {
