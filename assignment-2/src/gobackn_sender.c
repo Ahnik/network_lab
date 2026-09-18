@@ -11,7 +11,7 @@
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    /* argv[1] = IP address, argv[2] = file, argv[3] = m, argv[4] = max_delay_ms, argv[5] = timeout_ms, argv[6] = probability of error per frame */
+    /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms, argv[4] = timeout_ms, argv[5] = probability of error per frame, argv[6] = seq. no. bits */
     if (argc < 7) {
         printf("Usage: ./gobackn_sender <IP address> <file> <max_delay_ms> <timeout_ms> <per_frame_error> <seq no. bits>\n");
         return 1;
@@ -70,9 +70,12 @@ int main(int argc, char **argv) {
     uint32_t index = 0;
     AckFrame ack;
     Frame temp_frame;
+    uint32_t frames_sent = 0;
+    uint32_t ack_received = 0;
+    uint32_t ack_discarded = 0;
 
-    while (index < total_frames) {
-        if (sn - sf < sw) {
+    while (index < total_frames || sf != index) {
+        if (((sn - sf) & sw) < sw && index < total_frames) {
             // Enter MAC address, sequence number and CRC
             frame_buffer[index].header.seq_no = sn;
             input_mac_address(&frame_buffer[index]);
@@ -86,29 +89,47 @@ int main(int argc, char **argv) {
             inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
             inject_random_delay(max_delay_ms);
             if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
+                printf("Frame #%u sent! Seq no - %u!\n", index+1, frame_buffer[index].header.seq_no);
+                frames_sent++;
                 index++;
-                sn = (sn + 1) % (1 << m);
+                sn = (sn + 1) & sw;
             }
         }
 
         // Receive acknowledgement from receiver
         int ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
-        if (ret > 0) {
-            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0)
-                continue;
-            else if (ack.ack_no > sf && ack.ack_no <= sn)
-                sf = ack.ack_no + 1;
-        } else {
+        if (ret == 0) {
             // If ACK is not received, resend all frames that are not acknowledged
-            uint32_t offset = (uint32_t) (sn >= sf) ? (sn - sf) : (sn + (1 << m) - sf);
+            printf("No ACK received!\n");
+            uint32_t offset = (uint32_t) ((sn - sf) & sw);
             for (uint32_t i = index - offset; i < index; i++) {
-                memcpy(&temp_frame, &frame_buffer[index], FRAME_SIZE);
+                memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
                 inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
                 inject_random_delay(max_delay_ms);
-                send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
+                if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
+                    printf("Frame #%u resent! Seq no - %u!\n", i+1, frame_buffer[i].header.seq_no);
+                    frames_sent++;
+                }
             }
-        }
+        } else if (ret > 0) {
+            ack_received++;
+            uint8_t diff = (ack.ack_no - sf) & sw;
+            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
+                printf("ACK %u received!\n", ack.ack_no);
+                sf = ack.ack_no;
+            }
+            else {
+                printf("Corrupted ACK discarded! Seq no - %u\n", ack.ack_no);
+                ack_discarded++;
+            }
+        } else break;
     }
+
+    // Print the statistics
+    printf("Total frames: %u\n", total_frames);
+    printf("Frames sent: %u\n", frames_sent);
+    printf("Acknowledgements received: %u\n", ack_received);
+    printf("Acknowledgements discarded: %u\n", ack_discarded);
 
     close(receiver_socket);
     free(frame_buffer);

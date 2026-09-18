@@ -85,10 +85,11 @@ int main(int argc, char **argv) {
             if (receive_in_buffer((uint8_t *) &frame_buffer[index], FRAME_SIZE, sender_socket) != 0) break;
             frames_received++;
             if (compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE) == 0 && frame_buffer[index].header.seq_no == rn) {
-                // printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
-                rn = (rn + 1) % (1 << m);
+                printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
+                rn = (rn + 1) & ((1 << m) - 1);
                 index++;
             } else frames_discarded++;
+            inject_random_delay(max_delay_ms);
             send_ack_with_error(rn, sender_socket, per_frame_error);
             ack_sent++;
         }

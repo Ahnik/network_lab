@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define INJECT_ERROR    /* Comment this line if you don't want to inject error */
+// #define DEBUG       /* comment this line if you don't want debug messages */
 
 #include <stdint.h>
 #include <limits.h>

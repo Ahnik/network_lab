@@ -48,7 +48,7 @@ void input_mac_address(Frame *frame) {
 
 uint32_t read_payload_len(int sockfd){
     if(sockfd < 0) return 0;
-    uint32_t *len_buf = (uint32_t *)calloc(1, sizeof(*len_buf));
+    uint32_t *len_buf = (uint32_t *) calloc(1, sizeof(*len_buf));
     if(!len_buf) return 0;
     ssize_t bytesWritten = 0;
     while(bytesWritten < HEADER_SIZE){
@@ -151,8 +151,10 @@ int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_
     else if (ret == 0)
         return 0;
 
-    receive_in_buffer((uint8_t *) buffer, ACK_SIZE, receiver_socket);
-    return 1;
+    if (receive_in_buffer((uint8_t *) buffer, ACK_SIZE, receiver_socket) == -1)
+        return -1;
+    else
+        return 1;
 }
 
 void inject_random_delay(int max_delay_ms) {
