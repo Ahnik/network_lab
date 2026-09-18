@@ -12,15 +12,16 @@
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        printf("Usage: ./stop_and_wait_receiver <max_delay_ms> <per_frame_error>\n");
+    if (argc < 4) {
+        printf("Usage: ./stop_and_wait_receiver <seq no. bits> <max_delay_ms> <per_frame_error>\n");
         return 1;
     }
 
     // Set the max delay
-    int max_delay_ms = atoi(argv[1]);
+    int max_delay_ms = atoi(argv[2]);
+    int m = atoi(argv[1]);
     double per_frame_error;
-    sscanf(argv[2], "%lf", &per_frame_error);
+    sscanf(argv[3], "%lf", &per_frame_error);
 
     // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
     struct sigaction sa;
@@ -72,27 +73,20 @@ int main(int argc, char **argv) {
         if (frame_buffer == NULL)
             exit_with_error("Memory allocation error!");
 
-        uint8_t seq_no = 0;
-        for (uint32_t i = 0; i < total_frames; i++) {
-            int count = 0;
-            do {
-                if (count++ > 0) {
-                    inject_random_delay(max_delay_ms);
-                    send_ack_with_error(seq_no, sender_socket, per_frame_error);
-                }
-                if (receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket) != 0) goto cleanup;
-            } while (
-                compute_crc32((uint8_t *) &frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) != 0 || 
-                seq_no != frame_buffer[i].header.seq_no
-            );
+        /* TODO: Write the algorithm for receiving the frames in Go-Back-N */
+        uint8_t rn = 0;
+        size_t index = 0;
 
-            printf("Frame #%u received! Seq no - %d! No. of ACK transmissions- %d!\n", i+1, frame_buffer[i].header.seq_no, count);
-            seq_no = (seq_no + 1) % 2;
-            inject_random_delay(max_delay_ms);
-            send_ack_with_error(seq_no, sender_socket, per_frame_error);
+        // Receive frame and send ACK
+        while (index < total_frames) {
+            receive_in_buffer((uint8_t *) &frame_buffer[index], FRAME_SIZE, sender_socket);
+            if (compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE) == 0 && frame_buffer[index].header.seq_no == rn) {
+                rn = (rn + 1) % (1 << m);
+                index++;
+                send_ack_with_error(rn, sender_socket, per_frame_error);
+            }
         }
 
-cleanup:
         close(sender_socket);
         free(frame_buffer);
     }

@@ -73,10 +73,10 @@ void create_crc32_table();
 uint32_t compute_crc32(const uint8_t *buffer, size_t size);
 
 // Function to send data from a buffer
-void send_from_buffer(uint8_t *buffer, long size, int socket);
+int send_from_buffer(uint8_t *buffer, long size, int socket);
 
 // Function to receive data into a buffer
-void receive_in_buffer(uint8_t *buffer, long size, int socket);
+int receive_in_buffer(uint8_t *buffer, long size, int socket);
 
 // Function to receive a frame with timeout
 int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms);

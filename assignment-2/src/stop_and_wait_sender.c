@@ -11,15 +11,17 @@
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms, argv[4] = timeout_ms */
-    if (argc < 5) {
-        printf("Usage: ./stop_and_wait_sender <IP address> <file> <max_delay_ms>\n");
+    /* argv[1] = IP address, argv[2] = file, argv[3] = max_delay_ms, argv[4] = timeout_ms, argv[5] = probability of error per frame */
+    if (argc < 6) {
+        printf("Usage: ./stop_and_wait_sender <IP address> <file> <max_delay_ms> <timeout_ms> <per_frame_error>\n");
         return 1;
     }
 
     // Set the max delay and timer
     int timeout_ms = atoi(argv[4]);
     int max_delay_ms = atoi(argv[3]);
+    double per_frame_error;
+    sscanf(argv[5], "%lf", &per_frame_error);
 
     // Create CRC-32 table
     create_crc32_table();
@@ -63,12 +65,12 @@ int main(int argc, char **argv) {
     /* Implement the Stop-and-Wait sender-side logic here */
     uint8_t seq_no = 0;
     AckFrame ack;
-    memset(&ack, 0, ACK_SIZE);
+    Frame temp_frame;
 
     for (uint32_t i = 0; i < total_frames; i++) {
+        // Enter MAC address, sequence number and CRC
         frame_buffer[i].header.seq_no = seq_no;
         input_mac_address(&frame_buffer[i]);
-
         uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
         frame_buffer[i].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
         frame_buffer[i].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
@@ -79,18 +81,12 @@ int main(int argc, char **argv) {
         int ret = 0;
         int count = 0;
 
-        // Copy the current frame
-        Frame temp_frame;
-
         do {
             count++;
             memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
-#ifdef INJECT_ERROR
-            inject_error((uint8_t *) &temp_frame, FRAME_SIZE);
-#endif
+            inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
             inject_random_delay(max_delay_ms);
-            if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) != 0)
-                exit_with_error("send failed!");
+            send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
 
             ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
             if (ret > 0 && (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no))

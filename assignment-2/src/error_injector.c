@@ -34,30 +34,33 @@ void inject_burst_error(uint8_t *buffer, unsigned int size) {
     }
 }
 
-void inject_error(uint8_t *frame, size_t length) {
-    ErrorType error;
-    error = rand() % ERROR_NUM;
-    switch (error) {
-        case SINGLE_BIT:
-            inject_single_bit_error(frame, length);
-            break;
-        case TWO_ISOLATED:
-            inject_two_isolated_error(frame, length);
-            break;
-        case ODD_ERRORS:
-            inject_odd_errors(frame, length);
-            break;
-        case BURST:
-            inject_burst_error(frame, length);
-            break;
-        case NO_ERROR:
-            break;
-        case ERROR_NUM:
-            break;
+void inject_error(uint8_t *frame, size_t length, double per_frame_error) {
+    double random = (double) rand() / (double) RAND_MAX;
+    if (random < per_frame_error) {
+        ErrorType error;
+        error = rand() % (ERROR_NUM - 1);
+        switch (error) {
+            case SINGLE_BIT:
+                inject_single_bit_error(frame, length);
+                break;
+            case TWO_ISOLATED:
+                inject_two_isolated_error(frame, length);
+                break;
+            case ODD_ERRORS:
+                inject_odd_errors(frame, length);
+                break;
+            case BURST:
+                inject_burst_error(frame, length);
+                break;
+            case NO_ERROR:
+                break;
+            case ERROR_NUM:
+                break;
+        }
     }
 }
 
-void send_ack_with_error(int ack_no, int sender_socket) {
+void send_ack_with_error(int ack_no, int sender_socket, double per_frame_error) {
     AckFrame frame;
     frame.frame_type = 0xFF;
     frame.ack_no = ack_no;
@@ -68,7 +71,7 @@ void send_ack_with_error(int ack_no, int sender_socket) {
     frame.fcs[3] = (uint8_t) (crc32);
 
 #ifdef INJECT_ERROR
-    inject_error((uint8_t *) &frame, ACK_SIZE);
+    inject_error((uint8_t *) &frame, ACK_SIZE, per_frame_error);
 #endif
 
     send_from_buffer((uint8_t *) &frame, ACK_SIZE, sender_socket);
