@@ -9,14 +9,20 @@ COMMON					= $(SRC_DIR)/common.c
 ERROR_INJECTOR			= $(SRC_DIR)/error_injector.c
 STOP_AND_WAIT_SENDER	= $(SRC_DIR)/stop_and_wait_sender.c
 STOP_AND_WAIT_RECEIVER	= $(SRC_DIR)/stop_and_wait_receiver.c
+GO_BACK_N_SENDER		= $(SRC_DIR)/gobackn_sender.c
+GO_BACK_N_RECEIVER		= $(SRC_DIR)/gobackn_receiver.c
 
 # Main source files
 STOP_AND_WAIT_SENDER_SRC   = $(COMMON) $(ERROR_INJECTOR) $(STOP_AND_WAIT_SENDER)
 STOP_AND_WAIT_RECEIVER_SRC = $(COMMON) $(ERROR_INJECTOR) $(STOP_AND_WAIT_RECEIVER)
+GO_BACK_N_SENDER_SRC	   = $(COMMON) $(ERROR_INJECTOR) $(GO_BACK_N_SENDER)
+GO_BACK_N_RECEIVER_SRC	   = $(COMMON) $(ERROR_INJECTOR) $(GO_BACK_N_RECEIVER)
 
 # Binary files
 STOP_AND_WAIT_SENDER_BIN	= $(BIN_DIR)/stop_and_wait_sender
 STOP_AND_WAIT_RECEIVER_BIN	= $(BIN_DIR)/stop_and_wait_receiver
+GO_BACK_N_SENDER_BIN		= $(BIN_DIR)/gobackn_sender
+GO_BACK_N_RECEIVER_BIN		= $(BIN_DIR)/gobackn_receiver
 
 # Targets
 .PHONY: all clean build
@@ -34,7 +40,13 @@ $(STOP_AND_WAIT_SENDER_BIN): $(STOP_AND_WAIT_SENDER_SRC) | start
 $(STOP_AND_WAIT_RECEIVER_BIN): $(STOP_AND_WAIT_RECEIVER_SRC) | start
 	$(CC) $(CFLAGS) $^ -o $@
 
-build: $(STOP_AND_WAIT_RECEIVER_BIN) $(STOP_AND_WAIT_SENDER_BIN)
+$(GO_BACK_N_SENDER_BIN): $(GO_BACK_N_SENDER_SRC) | start
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(GO_BACK_N_RECEIVER_BIN): $(GO_BACK_N_RECEIVER_SRC) | start
+	$(CC) $(CFLAGS) $^ -o $@
+
+build: $(STOP_AND_WAIT_RECEIVER_BIN) $(STOP_AND_WAIT_SENDER_BIN) $(GO_BACK_N_RECEIVER_BIN) $(GO_BACK_N_SENDER_BIN)
 
 # For cleaning up
 clean:

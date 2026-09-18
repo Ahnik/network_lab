@@ -13,16 +13,16 @@
 int main(int argc, char **argv) {
     /* argv[1] = IP address, argv[2] = file, argv[3] = m, argv[4] = max_delay_ms, argv[5] = timeout_ms, argv[6] = probability of error per frame */
     if (argc < 7) {
-        printf("Usage: ./stop_and_wait_sender <IP address> <file> <seq no. bits> <max_delay_ms> <timeout_ms> <per_frame_error>\n");
+        printf("Usage: ./gobackn_sender <IP address> <file> <max_delay_ms> <timeout_ms> <per_frame_error> <seq no. bits>\n");
         return 1;
     }
 
     // Set the max delay and timer
-    int timeout_ms = atoi(argv[5]);
-    int max_delay_ms = atoi(argv[4]);
-    int m = atoi(argv[3]);
+    int timeout_ms = atoi(argv[4]);
+    int max_delay_ms = atoi(argv[3]);
+    int m = atoi(argv[6]);
     double per_frame_error;
-    sscanf(argv[6], "%lf", &per_frame_error);
+    sscanf(argv[5], "%lf", &per_frame_error);
 
     // Create CRC-32 table
     create_crc32_table();
@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
                 sf = ack.ack_no + 1;
         } else {
             // If ACK is not received, resend all frames that are not acknowledged
-            size_t offset = (size_t) (sn >= sf) ? (sn - sf) : (sn + (1 << m) - sf);
-            for (size_t i = index - offset; i < index; i++) {
+            uint32_t offset = (uint32_t) (sn >= sf) ? (sn - sf) : (sn + (1 << m) - sf);
+            for (uint32_t i = index - offset; i < index; i++) {
                 memcpy(&temp_frame, &frame_buffer[index], FRAME_SIZE);
                 inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
                 inject_random_delay(max_delay_ms);

@@ -12,16 +12,17 @@
 #include "error_injector.h"
 
 int main(int argc, char **argv) {
-    if (argc < 4) {
-        printf("Usage: ./stop_and_wait_receiver <seq no. bits> <max_delay_ms> <per_frame_error>\n");
+    int m;      // Number of bits used for sequence number
+    if (argc < 3) {
+        printf("Usage: ./gobackn_receiver <max_delay_ms> <per_frame_error> <seq no. bits>\n");
         return 1;
     }
+    else if (argc == 3) m = 1;
+    else                m = atoi(argv[3]);
 
-    // Set the max delay
-    int max_delay_ms = atoi(argv[2]);
-    int m = atoi(argv[1]);
+    int max_delay_ms = atoi(argv[1]);
     double per_frame_error;
-    sscanf(argv[3], "%lf", &per_frame_error);
+    sscanf(argv[2], "%lf", &per_frame_error);
 
     // Ignore the SIGPIPE interrupt so that the server process doesn't get terminated due to a broken pipe
     struct sigaction sa;
@@ -73,19 +74,31 @@ int main(int argc, char **argv) {
         if (frame_buffer == NULL)
             exit_with_error("Memory allocation error!");
 
-        /* TODO: Write the algorithm for receiving the frames in Go-Back-N */
         uint8_t rn = 0;
-        size_t index = 0;
+        uint32_t index = 0;
+        uint32_t frames_received = 0;
+        uint32_t frames_discarded = 0;
+        uint32_t ack_sent = 0;
 
         // Receive frame and send ACK
         while (index < total_frames) {
-            receive_in_buffer((uint8_t *) &frame_buffer[index], FRAME_SIZE, sender_socket);
+            if (receive_in_buffer((uint8_t *) &frame_buffer[index], FRAME_SIZE, sender_socket) != 0) break;
+            frames_received++;
             if (compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE) == 0 && frame_buffer[index].header.seq_no == rn) {
+                // printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
                 rn = (rn + 1) % (1 << m);
                 index++;
-                send_ack_with_error(rn, sender_socket, per_frame_error);
-            }
+            } else frames_discarded++;
+            send_ack_with_error(rn, sender_socket, per_frame_error);
+            ack_sent++;
         }
+
+        // Print statistics
+        printf("Total frames in the message: %u\n", total_frames);
+        printf("Frames received: %u\n", frames_received);
+        printf("Frames discarded: %u\n", frames_discarded);
+        printf("Acknowledgements sent: %u\n", ack_sent);
+        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 
         close(sender_socket);
         free(frame_buffer);

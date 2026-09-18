@@ -72,24 +72,24 @@ int main(int argc, char **argv) {
         if (frame_buffer == NULL)
             exit_with_error("Memory allocation error!");
 
-        uint8_t seq_no = 0;
+        uint8_t rn = 0;
         for (uint32_t i = 0; i < total_frames; i++) {
             int count = 0;
             do {
                 if (count++ > 0) {
                     inject_random_delay(max_delay_ms);
-                    send_ack_with_error(seq_no, sender_socket, per_frame_error);
+                    send_ack_with_error(rn, sender_socket, per_frame_error);
                 }
                 if (receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket) != 0) goto cleanup;
             } while (
                 compute_crc32((uint8_t *) &frame_buffer[i], PAYLOAD_SIZE + sizeof(Header) + 4) != 0 || 
-                seq_no != frame_buffer[i].header.seq_no
+                rn != frame_buffer[i].header.seq_no
             );
 
             printf("Frame #%u received! Seq no - %d! No. of ACK transmissions- %d!\n", i+1, frame_buffer[i].header.seq_no, count);
-            seq_no = (seq_no + 1) % 2;
+            rn = (rn + 1) % 2;
             inject_random_delay(max_delay_ms);
-            send_ack_with_error(seq_no, sender_socket, per_frame_error);
+            send_ack_with_error(rn, sender_socket, per_frame_error);
         }
 
 cleanup:

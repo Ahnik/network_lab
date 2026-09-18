@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -63,38 +64,85 @@ int main(int argc, char **argv) {
     }
 
     /* Implement the Stop-and-Wait sender-side logic here */
-    uint8_t seq_no = 0;
+    uint8_t sn = 0;
+    uint32_t index = 0;
     AckFrame ack;
     Frame temp_frame;
+    uint32_t frames_sent = 0;
+    uint32_t ack_received = 0;
+    bool can_send = true;
 
-    for (uint32_t i = 0; i < total_frames; i++) {
-        // Enter MAC address, sequence number and CRC
-        frame_buffer[i].header.seq_no = seq_no;
-        input_mac_address(&frame_buffer[i]);
-        uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
-        frame_buffer[i].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
-        frame_buffer[i].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
-        frame_buffer[i].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
-        frame_buffer[i].trailer.fcs[3] = (uint8_t) (crc32);
+    while (index < total_frames) {
+        frame_buffer[index].header.seq_no = sn;
+        input_mac_address(&frame_buffer[index]);
+        uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE - sizeof(Trailer));
+        frame_buffer[index].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
+        frame_buffer[index].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
+        frame_buffer[index].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
+        frame_buffer[index].trailer.fcs[3] = (uint8_t) (crc32);
 
-        seq_no = (seq_no + 1) % 2;
-        int ret = 0;
-        int count = 0;
+        // Send the frame if it can be sent
+        if (can_send) {
+            memcpy(&temp_frame, &frame_buffer[index], FRAME_SIZE);
+            inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
+            inject_random_delay(max_delay_ms);
+            if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
+                index++;
+                sn = (sn + 1) % 2;
+            }
+            frames_sent++;
+            can_send = false;
+        }
 
-        do {
-            count++;
-            memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
+        // Receive acknowledgement from sender
+        int ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
+        if (ret == 0) {
+            // Resend the frame
+            memcpy(&temp_frame, &frame_buffer[index-1], FRAME_SIZE);
             inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
             inject_random_delay(max_delay_ms);
             send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
-
-            ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
-            if (ret > 0 && (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no))
-                ret = 0;
-        } while (ret == 0);
-
-        printf("Frame #%u successfully received! Seq no - %d! No. of frame transmissions - %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+            frames_sent++;
+        } else {
+            ack_received++;
+            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) == 0 && ack.ack_no == sn)
+                can_send = true;
+        }
     }
+
+    // Print statistics
+    printf("Total frames: %u\n", total_frames);
+    printf("Frames sent: %u\n", frames_sent);
+    printf("Acknowledgements received: %u\n", ack_received);
+
+    // for (uint32_t i = 0; i < total_frames; i++) {
+    //     // Enter MAC address, sequence number and CRC
+    //     frame_buffer[i].header.seq_no = seq_no;
+    //     input_mac_address(&frame_buffer[i]);
+    //     uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[i], FRAME_SIZE - sizeof(Trailer));
+    //     frame_buffer[i].trailer.fcs[0] = (uint8_t) (crc32 >> 24);
+    //     frame_buffer[i].trailer.fcs[1] = (uint8_t) (crc32 >> 16);
+    //     frame_buffer[i].trailer.fcs[2] = (uint8_t) (crc32 >> 8);
+    //     frame_buffer[i].trailer.fcs[3] = (uint8_t) (crc32);
+
+    //     seq_no = (seq_no + 1) % 2;
+    //     int ret = 0;
+    //     int count = 0;
+
+    //     do {
+    //         count++;
+    //         memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
+    //         inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
+    //         inject_random_delay(max_delay_ms);
+    //         send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket);
+
+    //         ret = receive_ack_with_timeout(&ack, receiver_socket, timeout_ms);
+    //         if (ret > 0 && (compute_crc32((uint8_t *) &ack, ACK_SIZE) != 0 || ack.ack_no != seq_no))
+    //             ret = 0;
+    //     } while (ret == 0);
+
+    //     printf("Frame #%u successfully received! Seq no - %d! No. of frame transmissions - %d!\n", i+1, frame_buffer[i].header.seq_no, count);
+    // }
 
     close(receiver_socket);
     free(frame_buffer);
