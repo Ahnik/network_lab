@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Set the max delay and timer
+    // Set the initial variables
     int timeout_ms = atoi(argv[4]);
     int max_delay_ms = atoi(argv[3]);
     double per_frame_error;

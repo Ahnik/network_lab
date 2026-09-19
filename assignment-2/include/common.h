@@ -81,6 +81,9 @@ int receive_in_buffer(uint8_t *buffer, long size, int socket);
 // Function to receive a frame with timeout
 int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms);
 
+// Function to receive a frame until timeout and the timer can be stopped
+int receive_ack_until_timeout_or_stop(AckFrame *buffer, int sockfd, int stopfd, int timeout_ms);
+
 // Function to inject delay
 void inject_random_delay(int max_delay_ms);
 
