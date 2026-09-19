@@ -16,15 +16,16 @@ typedef enum {
 typedef struct {
     pthread_t thread;
     pthread_mutex_t lock;
+    pthread_cond_t cond;
     ReceiverState state;
-    bool received_ack;
-    AckFrame *const ack_buffer;
+    AckFrame ack;
     const int sockfd;
     const int stopfd;
     const int timeout;
+    bool received_ack;
+    bool client_connected;
 } Receiver;
 
-// Receiver thread function
 void *receiver_function(void *arg);
 
 #endif

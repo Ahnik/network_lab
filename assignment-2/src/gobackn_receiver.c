@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
             } else frames_discarded++;
             inject_random_delay(max_delay_ms);
             send_ack_with_error(rn, sender_socket, per_frame_error);
+            printf("Sent ACK %u!\n", rn);
             ack_sent++;
         }
 

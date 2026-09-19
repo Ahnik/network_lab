@@ -157,29 +157,6 @@ int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_
         return 1;
 }
 
-int receive_ack_until_timeout_or_stop(AckFrame *buffer, int sockfd, int stopfd, int timeout_ms) {
-    struct pollfd fds[2];
-    fds[0].fd = sockfd;
-    fds[0].events = POLLIN;
-    fds[1].fd = stopfd;
-    fds[1].events = POLLIN;
-
-    int ret = poll(fds, 2, timeout_ms);
-    if (ret == 0)       // Timeout
-        return 0;
-    else if (ret < 0)   // Error
-        return -1;
-
-    if (fds[1].revents & POLLIN)    // Stop signal received
-        return 1;
-    else if (fds[0].revents & POLLIN) {
-        if (receive_in_buffer((uint8_t *) buffer, ACK_SIZE, sockfd) == -1)
-            return -1;
-        else
-            return 1;
-    }
-}
-
 void inject_random_delay(int max_delay_ms) {
     struct timespec ts;
     int delay_ms = rand() % max_delay_ms;

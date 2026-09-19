@@ -70,9 +70,7 @@ void send_ack_with_error(int ack_no, int sender_socket, double per_frame_error) 
     frame.fcs[2] = (uint8_t) (crc32 >> 8);
     frame.fcs[3] = (uint8_t) (crc32);
 
-#ifdef INJECT_ERROR
     inject_error((uint8_t *) &frame, ACK_SIZE, per_frame_error);
-#endif
 
     send_from_buffer((uint8_t *) &frame, ACK_SIZE, sender_socket);
 }
