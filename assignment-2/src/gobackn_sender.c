@@ -129,8 +129,8 @@ int main(int argc, char **argv) {
             }
         }
 
-        // Check for ACK notification
         pthread_mutex_lock(&receiver.lock);
+        // Check if there is a notification or not
         if (receiver.event == ACK_RECEIVED) {
             ack_received++;
             uint8_t diff = (receiver.ack.ack_no - sf) & sw;
@@ -142,17 +142,18 @@ int main(int argc, char **argv) {
                 printf("Corrupted ACK discarded! Seq no - %u!\n", receiver.ack.ack_no);
             }
             // Interrupt the receiver thread to stop the timer
+            receiver.event = INTERRUPTED;
             if (receiver.is_running)
                 write(stop_pipe[WRITE_END], "x", 1);
-            else
-                receiver.event = INTERRUPTED;
         }
 
         // Check if there is a timeout or not
         if (receiver.event == TIMEOUT) {
             // Restart the timer
-            receiver.is_running = true;
-            pthread_cond_signal(&receiver.cond);
+            if (receiver.is_running == false) {
+                receiver.is_running = true;
+                pthread_cond_signal(&receiver.thread);
+            }
             pthread_mutex_unlock(&receiver.lock);
 
             // Resend all the frames that are not acknowledged
@@ -177,6 +178,7 @@ int main(int argc, char **argv) {
     printf("Acknowledgements received: %u\n", ack_received);
     printf("Acknowledgements discarded: %u\n", ack_discarded);
 
+    pthread_join(receiver.thread, NULL);
     close(receiver_socket);
     free(frame_buffer);
     close(stop_pipe[READ_END]);
