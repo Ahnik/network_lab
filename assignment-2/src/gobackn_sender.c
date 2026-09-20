@@ -115,18 +115,19 @@ int main(int argc, char **argv) {
                 index++;
                 sn = (sn + 1) & sw;
             }
-            // Check if the receiver thread is stopped and if it is, then start it.
-            if (pthread_mutex_trylock(&receiver.lock) != EBUSY) {
-                if (receiver.client_connected == false) {
-                    pthread_mutex_unlock(&receiver.lock);
-                    break;
-                }
-                if (receiver.is_running == false) {
-                    receiver.is_running = true;
-                    pthread_cond_signal(&receiver.cond);
-                }
+        }
+
+        // Check if the receiver thread is stopped and if it is, then start it.
+        if (pthread_mutex_trylock(&receiver.lock) != EBUSY) {
+            if (receiver.client_connected == false) {
                 pthread_mutex_unlock(&receiver.lock);
+                break;
             }
+            if (receiver.is_running == false) {
+                receiver.is_running = true;
+                pthread_cond_signal(&receiver.cond);
+            }
+            pthread_mutex_unlock(&receiver.lock);
         }
 
         pthread_mutex_lock(&receiver.lock);
@@ -152,7 +153,7 @@ int main(int argc, char **argv) {
             // Restart the timer
             if (receiver.is_running == false) {
                 receiver.is_running = true;
-                pthread_cond_signal(&receiver.thread);
+                pthread_cond_signal(&receiver.cond);
             }
             pthread_mutex_unlock(&receiver.lock);
 
