@@ -7,23 +7,24 @@
 
 // All possible states the receiver can be in
 typedef enum {
-    RECEIVER_STOPPED = 0,
-    RECEIVER_RUNNING,
-    RECEIVER_STATES,
-} ReceiverState;
+    ACK_RECEIVED = 0,
+    TIMEOUT,
+    INTERRUPTED,
+    RECEIVER_EVENTS,
+} ReceiverEvent;
 
 // Receiver struct
 typedef struct {
     pthread_t thread;
     pthread_mutex_t lock;
     pthread_cond_t cond;
-    ReceiverState state;
+    ReceiverEvent event;
     AckFrame ack;
     const int sockfd;
     const int stopfd;
     const int timeout;
-    bool received_ack;
     bool client_connected;
+    bool is_running;
 } Receiver;
 
 void *receiver_function(void *arg);

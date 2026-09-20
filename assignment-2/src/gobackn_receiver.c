@@ -88,7 +88,10 @@ int main(int argc, char **argv) {
                 printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
                 rn = (rn + 1) & ((1 << m) - 1);
                 index++;
-            } else frames_discarded++;
+            } else {
+                frames_discarded++;
+                printf("Corrupt frame #%u discarded!\n", frame_buffer[index].header.seq_no);
+            }
             inject_random_delay(max_delay_ms);
             send_ack_with_error(rn, sender_socket, per_frame_error);
             printf("Sent ACK %u!\n", rn);

@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     }
 
     // Set the initial variables
-    int timeout_ms = atoi(argv[4]);
+    int timeout_ms   = atoi(argv[4]);
     int max_delay_ms = atoi(argv[3]);
     int m = atoi(argv[6]);
     double per_frame_error;
@@ -84,9 +84,9 @@ int main(int argc, char **argv) {
     uint32_t ack_received = 0;
     uint32_t ack_discarded = 0;
     Receiver receiver = {
-        .state            = RECEIVER_STOPPED,
-        .received_ack     = false,
+        .event            = RECEIVER_EVENTS,
         .client_connected = true,
+        .is_running       = false,
         .sockfd           = receiver_socket,
         .stopfd           = stop_pipe[READ_END],
         .timeout          = timeout_ms
@@ -96,7 +96,6 @@ int main(int argc, char **argv) {
     pthread_create(&receiver.thread, NULL, receiver_function, &receiver);
 
     while (index < total_frames || sf != index) {
-        bool interrupted = false;
         if (((sn - sf) & sw) < sw && index < total_frames) {
             // Enter MAC address, sequence number and CRC
             frame_buffer[index].header.seq_no = sn;
@@ -122,8 +121,8 @@ int main(int argc, char **argv) {
                     pthread_mutex_unlock(&receiver.lock);
                     break;
                 }
-                if (receiver.state == RECEIVER_STOPPED) {
-                    receiver.state = RECEIVER_RUNNING;
+                if (receiver.is_running == false) {
+                    receiver.is_running = true;
                     pthread_cond_signal(&receiver.cond);
                 }
                 pthread_mutex_unlock(&receiver.lock);
@@ -132,8 +131,7 @@ int main(int argc, char **argv) {
 
         // Check for ACK notification
         pthread_mutex_lock(&receiver.lock);
-        if (receiver.received_ack == true) {
-            receiver.received_ack = false;
+        if (receiver.event == ACK_RECEIVED) {
             ack_received++;
             uint8_t diff = (receiver.ack.ack_no - sf) & sw;
             if (compute_crc32((uint8_t *) &receiver.ack, ACK_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
@@ -144,14 +142,16 @@ int main(int argc, char **argv) {
                 printf("Corrupted ACK discarded! Seq no - %u!\n", receiver.ack.ack_no);
             }
             // Interrupt the receiver thread to stop the timer
-            write(stop_pipe[WRITE_END], "x", 1);
-            interrupted = true;
+            if (receiver.is_running)
+                write(stop_pipe[WRITE_END], "x", 1);
+            else
+                receiver.event = INTERRUPTED;
         }
 
         // Check if there is a timeout or not
-        if (receiver.state == RECEIVER_STOPPED && !interrupted) {
+        if (receiver.event == TIMEOUT) {
             // Restart the timer
-            receiver.state = RECEIVER_RUNNING;
+            receiver.is_running = true;
             pthread_cond_signal(&receiver.cond);
             pthread_mutex_unlock(&receiver.lock);
 
