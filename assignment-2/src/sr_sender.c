@@ -95,9 +95,9 @@ int main(int argc, char **argv) {
     pthread_cond_init(&receiver.cond, NULL);
     pthread_create(&receiver.thread, NULL, receiver_function, &receiver);
 
+    /* Implement the Selective Repeat ARQ algorithm */
     while (index < total_frames || sf != index) {
         if (((sn - sf) & sw) < sw && index < total_frames) {
-            // Enter MAC address, sequence number and CRC
             frame_buffer[index].header.seq_no = sn;
             input_mac_address(&frame_buffer[index]);
             uint32_t crc32 = compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE - sizeof(Trailer));
@@ -136,8 +136,19 @@ int main(int argc, char **argv) {
             ack_received++;
             uint8_t diff = (receiver.frame.seq_no - sf) & sw;
             if (compute_crc32((uint8_t *) &receiver.frame, ACK_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
-                printf("ACK %u received!\n", receiver.frame.seq_no);
-                sf = receiver.frame.seq_no;
+                if (receiver.frame.frame_type == NAK_FRAME) {
+                    uint32_t offset = (uint32_t) ((sn - receiver.frame.seq_no) & sw);
+                    memcpy(&temp_frame, &frame_buffer[index-offset], FRAME_SIZE);
+                    inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
+                    inject_random_delay(max_delay_ms);
+                    if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
+                        printf("Frame #%u resent! Seq no - %u!\n", index-offset+1, frame_buffer[index-offset].header.seq_no);
+                        frames_sent++;
+                    }
+                } else if (receiver.frame.frame_type == ACK_FRAME) {
+                    printf("ACK %u received!\n", receiver.frame.seq_no);
+                    sf = receiver.frame.seq_no;
+                }
             } else {
                 ack_discarded++;
                 printf("Corrupted ACK discarded! Seq no - %u!\n", receiver.frame.seq_no);
@@ -148,7 +159,7 @@ int main(int argc, char **argv) {
                 write(stop_pipe[WRITE_END], "x", 1);
         }
 
-        // Check if there is a timeout or not
+        // If there is a timeout
         if (receiver.event == TIMEOUT) {
             // Restart the timer
             if (receiver.is_running == false) {
@@ -156,19 +167,6 @@ int main(int argc, char **argv) {
                 pthread_cond_signal(&receiver.cond);
             }
             pthread_mutex_unlock(&receiver.lock);
-
-            // Resend all the frames that are not acknowledged
-            printf("No ACK received!\n");
-            uint32_t offset = (uint32_t) ((sn - sf) & sw);
-            for (uint32_t i = index - offset; i < index; i++) {
-                memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
-                inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
-                inject_random_delay(max_delay_ms);
-                if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
-                    printf("Frame #%u resent! Seq no - %u!\n", i+1, frame_buffer[i].header.seq_no);
-                    frames_sent++;
-                }
-            }
         } else
             pthread_mutex_unlock(&receiver.lock);
     }

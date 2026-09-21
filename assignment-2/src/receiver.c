@@ -28,7 +28,7 @@ void *receiver_function(void *arg) {
             else {
                 if (fds[0].revents & POLLIN) {      // ACK has arrived
                     receiver->event = ACK_RECEIVED;
-                    if (receive_in_buffer((uint8_t *) &receiver->ack, ACK_SIZE, fds[0].fd) < 0) {
+                    if (receive_in_buffer((uint8_t *) &receiver->frame, ACK_SIZE, fds[0].fd) < 0) {
                         perror("receive");
                         receiver->client_connected = false;
                         pthread_mutex_unlock(&receiver->lock);

@@ -19,7 +19,7 @@ typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t cond;
     ReceiverEvent event;
-    AckFrame ack;
+    ControlFrame frame;
     const int sockfd;
     const int stopfd;
     const int timeout;

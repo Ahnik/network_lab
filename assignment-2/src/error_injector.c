@@ -61,9 +61,9 @@ void inject_error(uint8_t *frame, size_t length, double per_frame_error) {
 }
 
 void send_ack_with_error(int ack_no, int sender_socket, double per_frame_error) {
-    AckFrame frame;
+    ControlFrame frame;
     frame.frame_type = 0xFF;
-    frame.ack_no = ack_no;
+    frame.seq_no = ack_no;
     uint32_t crc32 = compute_crc32((uint8_t *) &frame, ACK_SIZE - 4);
     frame.fcs[0] = (uint8_t) (crc32 >> 24);
     frame.fcs[1] = (uint8_t) (crc32 >> 16);

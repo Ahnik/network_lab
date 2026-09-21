@@ -18,6 +18,10 @@
 #define CRC32_GENERATOR 0x04C11DB7
 #define CRC_TABLE_SIZE (2 << 8)
 
+// Bytes to be used by the type field in 
+#define ACK_FRAME      0xFF
+#define NAK_FRAME      0x00
+
 #pragma pack(push, 1)
 typedef struct {
     uint8_t  sender_addr[MAC_ADDRESS_SIZE];     // Sender address
@@ -46,9 +50,9 @@ typedef struct {
 #pragma pack(push, 1)
 typedef struct {
     uint8_t frame_type;
-    uint8_t ack_no;
+    uint8_t seq_no;
     uint8_t fcs[4];
-} AckFrame;
+} ControlFrame;
 #pragma pack(pop)
 
 // Lookup table for calculating CRC-32
@@ -79,7 +83,7 @@ int send_from_buffer(uint8_t *buffer, long size, int socket);
 int receive_in_buffer(uint8_t *buffer, long size, int socket);
 
 // Function to receive a frame with timeout
-int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms);
+int receive_ack_with_timeout(ControlFrame *buffer, int receiver_socket, int timeout_ms);
 
 // Function to inject delay
 void inject_random_delay(int max_delay_ms);

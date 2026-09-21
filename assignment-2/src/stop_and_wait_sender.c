@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     /* Implement the Stop-and-Wait sender-side logic here */
     uint8_t sn = 0;
     uint32_t index = 0;
-    AckFrame ack;
+    ControlFrame ack;
     Frame temp_frame;
     uint32_t frames_sent = 0;
     uint32_t ack_received = 0;
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
             frames_sent++;
         } else {
             ack_received++;
-            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) == 0 && ack.ack_no == sn)
+            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) == 0 && ack.seq_no == sn)
                 can_send = true;
             else
                 ack_discarded++;

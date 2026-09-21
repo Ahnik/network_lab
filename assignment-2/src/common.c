@@ -140,7 +140,7 @@ int receive_in_buffer(uint8_t *buffer, long size, int socket) {
     return 0;
 }
 
-int receive_ack_with_timeout(AckFrame *buffer, int receiver_socket, int timeout_ms) {
+int receive_ack_with_timeout(ControlFrame *buffer, int receiver_socket, int timeout_ms) {
     struct pollfd pfd;
     pfd.fd = receiver_socket;
     pfd.events = POLLIN;
