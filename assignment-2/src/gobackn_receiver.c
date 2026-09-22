@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
             exit_with_error("Memory allocation error!");
 
         uint8_t rn = 0;
+        uint8_t max_seq_no = (1 << m) - 1;
         uint32_t index = 0;
         uint32_t frames_received = 0;
         uint32_t frames_discarded = 0;
@@ -86,14 +87,14 @@ int main(int argc, char **argv) {
             frames_received++;
             if (compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE) == 0 && frame_buffer[index].header.seq_no == rn) {
                 printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
-                rn = (rn + 1) & ((1 << m) - 1);
+                rn = (rn + 1) & max_seq_no;
                 index++;
             } else {
                 frames_discarded++;
                 printf("Corrupt frame #%u discarded!\n", frame_buffer[index].header.seq_no);
             }
             inject_random_delay(max_delay_ms);
-            send_ack_with_error(rn, sender_socket, per_frame_error);
+            send_control_frame_with_error(ACK_FRAME, rn, sender_socket, per_frame_error);
             printf("Sent ACK %u!\n", rn);
             ack_sent++;
         }
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
         printf("Total frames in the message: %u\n", total_frames);
         printf("Frames received: %u\n", frames_received);
         printf("Frames discarded: %u\n", frames_discarded);
-        printf("Acknowledgements sent: %u\n", ack_sent);
+        printf("ACKs sent: %u\n", ack_sent);
         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 
         close(sender_socket);

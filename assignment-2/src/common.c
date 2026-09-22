@@ -151,7 +151,7 @@ int receive_ack_with_timeout(ControlFrame *buffer, int receiver_socket, int time
     else if (ret == 0)
         return 0;
 
-    if (receive_in_buffer((uint8_t *) buffer, ACK_SIZE, receiver_socket) == -1)
+    if (receive_in_buffer((uint8_t *) buffer, CONTROL_FRAME_SIZE, receiver_socket) == -1)
         return -1;
     else
         return 1;

@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
             frames_sent++;
         } else {
             ack_received++;
-            if (compute_crc32((uint8_t *) &ack, ACK_SIZE) == 0 && ack.seq_no == sn)
+            if (compute_crc32((uint8_t *) &ack, CONTROL_FRAME_SIZE) == 0 && ack.seq_no == sn)
                 can_send = true;
             else
                 ack_discarded++;

@@ -10,10 +10,10 @@
 
 #define RECEIVER_PORT  8989
 
-#define FRAME_SIZE       64        // Size of frame in bytes
-#define MAC_ADDRESS_SIZE  6        // Size of MAC address in bytes
-#define HEADER_SIZE       4        // Size of the header containing length
-#define ACK_SIZE          6        // Size of an ACK frame
+#define FRAME_SIZE         64        // Size of frame in bytes
+#define MAC_ADDRESS_SIZE    6        // Size of MAC address in bytes
+#define HEADER_SIZE         4        // Size of the header containing length
+#define CONTROL_FRAME_SIZE  6        // Size of an ACK frame
 
 #define CRC32_GENERATOR 0x04C11DB7
 #define CRC_TABLE_SIZE (2 << 8)

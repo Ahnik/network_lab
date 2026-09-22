@@ -13,6 +13,7 @@
 #include "common.h"
 #include "error_injector.h"
 #include "receiver.h"
+#include "ring_buffer.h"
 
 #define READ_END  0
 #define WRITE_END 1
@@ -31,9 +32,9 @@ int main(int argc, char **argv) {
     double per_frame_error;
     sscanf(argv[5], "%lf", &per_frame_error);
 
-    // Pipe for sending the stop signal to the receiver thread
-    int stop_pipe[2];
-    pipe(stop_pipe);
+    // Pipe for sending ACK frames from receiver thread to main thread
+    int ack_pipe[2];
+    pipe(ack_pipe);
 
     // Create CRC-32 table
     create_crc32_table();
@@ -83,16 +84,17 @@ int main(int argc, char **argv) {
     uint32_t frames_sent   = 0;
     uint32_t ack_received  = 0;
     uint32_t ack_discarded = 0;
+    ControlFrame ack;
     Receiver receiver = {
-        .event            = RECEIVER_EVENTS,
-        .client_connected = true,
-        .is_running       = false,
         .sockfd           = receiver_socket,
-        .stopfd           = stop_pipe[READ_END],
-        .timeout          = timeout_ms
+        .client_connected = true,
     };
-    pthread_mutex_init(&receiver.lock, NULL);
-    pthread_cond_init(&receiver.cond, NULL);
+    rb_init(&receiver.rb, 1 << m);
+    if (receiver.rb.buffer == NULL)
+        exit_with_error("Memory allocation error!\n");
+
+    struct timespec expiry_time;
+    bool timer_active = false;
     pthread_create(&receiver.thread, NULL, receiver_function, &receiver);
 
     while (index < total_frames || sf != index) {
@@ -117,45 +119,40 @@ int main(int argc, char **argv) {
             }
         }
 
-        // Check if the receiver thread is stopped and if it is, then start it.
-        if (pthread_mutex_trylock(&receiver.lock) != EBUSY) {
-            if (receiver.client_connected == false) {
-                pthread_mutex_unlock(&receiver.lock);
-                break;
-            }
-            if (receiver.is_running == false) {
-                receiver.is_running = true;
-                pthread_cond_signal(&receiver.cond);
-            }
-            pthread_mutex_unlock(&receiver.lock);
+        // Check if the timer is active and if not, start it
+        if (timer_active == false) {
+            timer_active = true;
+            expiry_time = get_deadline(timeout_ms);
         }
 
+        // Check if the client is connected
         pthread_mutex_lock(&receiver.lock);
-        // Check if there is a notification or not
-        if (receiver.event == ACK_RECEIVED) {
+        if (receiver.client_connected == false) {
+            pthread_mutex_unlock(&receiver.lock);
+            break;
+        }
+
+        // Check if there is an ACK notification or not
+        if (receiver.rb.count > 0) {
             ack_received++;
-            uint8_t diff = (receiver.frame.seq_no - sf) & sw;
-            if (compute_crc32((uint8_t *) &receiver.frame, ACK_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
-                printf("ACK %u received!\n", receiver.frame.seq_no);
-                sf = receiver.frame.seq_no;
+            rb_pop_front(&receiver.rb, &ack);
+            uint8_t diff = (ack.seq_no - sf) & sw;
+            if (compute_crc32((uint8_t *) &ack, CONTROL_FRAME_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
+                printf("ACK %u received!\n", ack.seq_no);
+                sf = ack.seq_no;
             } else {
                 ack_discarded++;
-                printf("Corrupted ACK discarded! Seq no - %u!\n", receiver.frame.seq_no);
+                printf("Corrupted ACK discarded! Seq no - %u!\n", ack.seq_no);
             }
-            // Interrupt the receiver thread to stop the timer
-            receiver.event = INTERRUPTED;
-            if (receiver.is_running)
-                write(stop_pipe[WRITE_END], "x", 1);
+            // Stop the timer
+            timer_active = false;
         }
+        pthread_mutex_unlock(&receiver.lock);
 
-        // Check if there is a timeout or not
-        if (receiver.event == TIMEOUT) {
+        // Check if there is a timer timeout or not
+        if (timer_active && is_expired(expiry_time)) {
             // Restart the timer
-            if (receiver.is_running == false) {
-                receiver.is_running = true;
-                pthread_cond_signal(&receiver.cond);
-            }
-            pthread_mutex_unlock(&receiver.lock);
+            expiry_time = get_deadline(timeout_ms);
 
             // Resend all the frames that are not acknowledged
             printf("No ACK received!\n");
@@ -169,8 +166,7 @@ int main(int argc, char **argv) {
                     frames_sent++;
                 }
             }
-        } else
-            pthread_mutex_unlock(&receiver.lock);
+        }
     }
 
     // Print the statistics
@@ -179,11 +175,12 @@ int main(int argc, char **argv) {
     printf("Acknowledgements received: %u\n", ack_received);
     printf("Acknowledgements discarded: %u\n", ack_discarded);
 
+    rb_free(&receiver.rb);
     pthread_join(receiver.thread, NULL);
     close(receiver_socket);
+    close(ack_pipe[READ_END]);
+    close(ack_pipe[WRITE_END]);
     free(frame_buffer);
-    close(stop_pipe[READ_END]);
-    close(stop_pipe[WRITE_END]);
 
     return 0;
 }

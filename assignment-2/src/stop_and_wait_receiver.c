@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
             do {
                 if (count++ > 0) {
                     inject_random_delay(max_delay_ms);
-                    send_ack_with_error(rn, sender_socket, per_frame_error);
+                    send_control_frame_with_error(ACK_FRAME, rn, sender_socket, per_frame_error);
                 }
                 if (receive_in_buffer((uint8_t *) &frame_buffer[i], FRAME_SIZE, sender_socket) != 0) goto cleanup;
             } while (
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
             printf("Frame #%u received! Seq no - %d! No. of ACK transmissions- %d!\n", i+1, frame_buffer[i].header.seq_no, count);
             rn = (rn + 1) % 2;
             inject_random_delay(max_delay_ms);
-            send_ack_with_error(rn, sender_socket, per_frame_error);
+            send_control_frame_with_error(ACK_FRAME, rn, sender_socket, per_frame_error);
         }
 
 cleanup:

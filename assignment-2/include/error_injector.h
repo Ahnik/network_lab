@@ -29,7 +29,7 @@ void inject_burst_error(uint8_t *buffer, unsigned int size);
 // Function to inject error into a frame
 void inject_error(uint8_t *frame, size_t length, double per_frame_error);
 
-// Function to send an ACK frame
-void send_ack_with_error(int ack_no, int sender_socket, double per_frame_error);
+// Function to send an ACK frame with error injected within it according to probability
+void send_control_frame_with_error(uint8_t frame_type, uint8_t seq_no, int sender_socket, double per_frame_error);
 
 #endif

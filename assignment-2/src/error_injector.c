@@ -60,17 +60,17 @@ void inject_error(uint8_t *frame, size_t length, double per_frame_error) {
     }
 }
 
-void send_ack_with_error(int ack_no, int sender_socket, double per_frame_error) {
+void send_control_frame_with_error(uint8_t frame_type, uint8_t seq_no, int sender_socket, double per_frame_error) {
     ControlFrame frame;
-    frame.frame_type = 0xFF;
-    frame.seq_no = ack_no;
-    uint32_t crc32 = compute_crc32((uint8_t *) &frame, ACK_SIZE - 4);
+    frame.frame_type = frame_type;
+    frame.seq_no = seq_no;
+    uint32_t crc32 = compute_crc32((uint8_t *) &frame, CONTROL_FRAME_SIZE - 4);
     frame.fcs[0] = (uint8_t) (crc32 >> 24);
     frame.fcs[1] = (uint8_t) (crc32 >> 16);
     frame.fcs[2] = (uint8_t) (crc32 >> 8);
     frame.fcs[3] = (uint8_t) (crc32);
 
-    inject_error((uint8_t *) &frame, ACK_SIZE, per_frame_error);
+    inject_error((uint8_t *) &frame, CONTROL_FRAME_SIZE, per_frame_error);
 
-    send_from_buffer((uint8_t *) &frame, ACK_SIZE, sender_socket);
+    send_from_buffer((uint8_t *) &frame, CONTROL_FRAME_SIZE, sender_socket);
 }
