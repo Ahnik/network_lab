@@ -78,10 +78,11 @@ int main(int argc, char **argv) {
         uint8_t rsize = 1 << (m-1);
         uint8_t max_seq_no = (1 << m) - 1;
         uint32_t index = 0;
-        uint32_t frames_received  = 0;
-        uint32_t frames_discarded = 0;
-        uint32_t ack_sent         = 0;
-        uint32_t nak_sent         = 0;
+        uint32_t frames_received     = 0;
+        uint32_t corrupt_frames      = 0;
+        uint32_t out_of_order_frames = 0;
+        uint32_t ack_sent            = 0;
+        uint32_t nak_sent            = 0;
         bool is_nak_sent = false;
         bool *marked = (bool *) calloc(1 << m, sizeof(bool));
         if (marked == NULL) {
@@ -99,7 +100,7 @@ int main(int argc, char **argv) {
             uint8_t diff = (frame_buffer[index].header.seq_no - rn) & max_seq_no;
             if (compute_crc32((uint8_t *) &frame_buffer[index], FRAME_SIZE) != 0) {
                 printf("Corrupt frame #%u discarded!\n", frame_buffer[index].header.seq_no);
-                frames_discarded++;
+                corrupt_frames++;
                 if (is_nak_sent == false) {
                     is_nak_sent = true;
                     inject_random_delay(max_delay_ms);
@@ -135,7 +136,7 @@ int main(int argc, char **argv) {
                 ack_sent++;
             } else {
                 printf("Out-of-order frame #%u discarded!\n", frame_buffer[index].header.seq_no);
-                frames_discarded++;
+                out_of_order_frames++;
                 send_control_frame_with_error(ACK_FRAME, frame_buffer[index].header.seq_no, sender_socket, per_frame_error);
                 printf("Sent ACK %u!\n", frame_buffer[index].header.seq_no);
                 ack_sent++;
@@ -143,11 +144,14 @@ int main(int argc, char **argv) {
         }
 
         // Print statistics
-        printf("Total frames in the message: %u\n", total_frames);
-        printf("Frames received: %u\n", frames_received);
-        printf("Frames discarded: %u\n", frames_discarded);
-        printf("ACKs sent: %u\n", ack_sent);
-        printf("NAKs sent: %u\n", nak_sent);
+        double efficiency = (double) total_frames / (double) frames_received;
+        fprintf(stderr, "Total frames in the message: %u\n", total_frames);
+        fprintf(stderr, "Frames received: %u\n", frames_received);
+        fprintf(stderr, "Efficiency: %lf\n", efficiency);
+        fprintf(stderr, "Corrupted frames: %u\n", corrupt_frames);
+        fprintf(stderr, "Out-of-order invalid frames: %u\n", out_of_order_frames);
+        fprintf(stderr, "ACKs sent: %u\n", ack_sent);
+        fprintf(stderr, "NAKs sent: %u\n", nak_sent);
         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 
         close(sender_socket);

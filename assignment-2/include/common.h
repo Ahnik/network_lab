@@ -1,8 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// #define DEBUG       /* comment this line if you don't want debug messages */
-
 #include <stdint.h>
 #include <limits.h>
 #include <stddef.h>

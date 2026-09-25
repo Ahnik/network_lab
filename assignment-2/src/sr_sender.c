@@ -29,6 +29,12 @@ int main(int argc, char **argv) {
     double per_frame_error;
     sscanf(argv[5], "%lf", &per_frame_error);
 
+    struct timespec start, end;
+    long seconds, nanoseconds;
+    long long total_ns;
+    double total_ms;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     // Create CRC-32 table
     create_crc32_table();
 
@@ -75,10 +81,11 @@ int main(int argc, char **argv) {
     uint8_t sn = 0;
     uint32_t index = 0;
     Frame temp_frame;
-    uint32_t frames_sent             = 0;
-    uint32_t ack_accepted            = 0;
-    uint32_t nak_accepted            = 0;
-    uint32_t control_frame_discarded = 0;
+    uint32_t frames_sent                = 0;
+    uint32_t ack_accepted               = 0;
+    uint32_t nak_accepted               = 0;
+    uint32_t erroneous_control_frame    = 0;
+    uint32_t out_of_order_control_frame = 0;
     ControlFrame control_frame;
     Receiver receiver = {
         .sockfd           = receiver_socket,
@@ -135,34 +142,39 @@ int main(int argc, char **argv) {
         while (receiver.rb.count > 0) {
             rb_pop_front(&receiver.rb, &control_frame);
             uint8_t diff = (control_frame.seq_no - sf) & max_seq_no;
-            if (compute_crc32((uint8_t *) &control_frame, CONTROL_FRAME_SIZE) == 0 && diff < ((sn - sf) & max_seq_no)) {
-                if (control_frame.frame_type == ACK_FRAME) {
-                    ack_accepted++;
-                    printf("ACK %u received!\n", control_frame.seq_no);
-                    send_window[control_frame.seq_no].acked = true;
-                    send_window[control_frame.seq_no].timer_active = false;
-                    while (send_window[sf].acked && sf != sn) {
-                        send_window[sf].acked = false;
-                        send_window[sf].timer_active = false;
-                        sf = (sf + 1) & max_seq_no;
+            if (compute_crc32((uint8_t *) &control_frame, CONTROL_FRAME_SIZE) == 0) {
+                if (diff < ((sn - sf) & max_seq_no)) {
+                    if (control_frame.frame_type == ACK_FRAME) {
+                        ack_accepted++;
+                        printf("ACK %u received!\n", control_frame.seq_no);
+                        send_window[control_frame.seq_no].acked = true;
+                        send_window[control_frame.seq_no].timer_active = false;
+                        while (send_window[sf].acked && sf != sn) {
+                            send_window[sf].acked = false;
+                            send_window[sf].timer_active = false;
+                            sf = (sf + 1) & max_seq_no;
+                        }
+                    } else if (control_frame.frame_type == NAK_FRAME) {
+                        nak_accepted++;
+                        printf("NAK %u received!\n", control_frame.seq_no);
+                        uint32_t i = send_window[control_frame.seq_no].index;
+                        memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
+                        inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
+                        inject_random_delay(max_delay_ms);
+                        if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
+                            printf("Frame #%u resent! Seq no - %u!\n", i+1, frame_buffer[i].header.seq_no);
+                            frames_sent++;
+                        }
+                        send_window[control_frame.seq_no].timer_active = true;
+                        send_window[control_frame.seq_no].expiry_time = get_deadline(timeout_ms);
                     }
-                } else if (control_frame.frame_type == NAK_FRAME) {
-                    nak_accepted++;
-                    printf("NAK %u received!\n", control_frame.seq_no);
-                    uint32_t i = send_window[control_frame.seq_no].index;
-                    memcpy(&temp_frame, &frame_buffer[i], FRAME_SIZE);
-                    inject_error((uint8_t *) &temp_frame, FRAME_SIZE, per_frame_error);
-                    inject_random_delay(max_delay_ms);
-                    if (send_from_buffer((uint8_t *) &temp_frame, FRAME_SIZE, receiver_socket) == 0) {
-                        printf("Frame #%u resent! Seq no - %u!\n", i+1, frame_buffer[i].header.seq_no);
-                        frames_sent++;
-                    }
-                    send_window[control_frame.seq_no].timer_active = true;
-                    send_window[control_frame.seq_no].expiry_time = get_deadline(timeout_ms);
+                } else {
+                    out_of_order_control_frame++;
+                    printf("Out-of-order control frame #%u discarded!\n", control_frame.seq_no);
                 }
             } else {
-                control_frame_discarded++;
-                printf("Corrupt or invalid control frame #%u discarded!\n", control_frame.seq_no);
+                erroneous_control_frame++;
+                printf("Corrupt control frame #%u discarded!\n", control_frame.seq_no);
             }
         }
         pthread_mutex_unlock(&receiver.lock);
@@ -185,11 +197,28 @@ int main(int argc, char **argv) {
     }
 
     // Print the statistics
-    printf("Total frames: %u\n", total_frames);
-    printf("Frames sent: %u\n", frames_sent);
-    printf("ACKs accepted: %u\n", ack_accepted);
-    printf("NAKs accepted: %u\n", nak_accepted);
-    printf("Control frames discarded: %u\n", control_frame_discarded);
+    double efficiency = (double) total_frames / (double) frames_sent;
+    fprintf(stderr, "Total frames: %u\n", total_frames);
+    fprintf(stderr, "Frames sent: %u\n", frames_sent);
+    fprintf(stderr, "Efficiency: %lf\n", efficiency);
+    fprintf(stderr, "ACKs received: %u\n", ack_accepted);
+    fprintf(stderr, "NAKs accepted: %u\n", nak_accepted);
+    fprintf(stderr, "Erroneous control frames: %u\n", erroneous_control_frame);
+    fprintf(stderr, "Out-of-order control frames: %u\n", out_of_order_control_frame);
+
+    // Record the end time
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    nanoseconds = end.tv_nsec - start.tv_nsec;
+    seconds = end.tv_sec - start.tv_sec;
+
+    if (nanoseconds < 0) {
+        seconds--;
+        nanoseconds += 1000000000L;
+    }
+
+    total_ns = (seconds * 1000000000LL) + nanoseconds;
+    total_ms = (double) total_ns / 1000000.0;
+    fprintf(stderr, "Execution time: %.6f ms\n", total_ms);
 
     pthread_join(receiver.thread, NULL);
     rb_free(&receiver.rb);

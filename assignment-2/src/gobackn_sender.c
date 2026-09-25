@@ -32,9 +32,11 @@ int main(int argc, char **argv) {
     double per_frame_error;
     sscanf(argv[5], "%lf", &per_frame_error);
 
-    // Pipe for sending ACK frames from receiver thread to main thread
-    int ack_pipe[2];
-    pipe(ack_pipe);
+    struct timespec start, end;
+    long seconds, nanoseconds;
+    long long total_ns;
+    double total_ms;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     // Create CRC-32 table
     create_crc32_table();
@@ -81,9 +83,10 @@ int main(int argc, char **argv) {
     uint8_t sn = 0;
     uint32_t index = 0;
     Frame temp_frame;
-    uint32_t frames_sent   = 0;
-    uint32_t ack_received  = 0;
-    uint32_t ack_discarded = 0;
+    uint32_t frames_sent      = 0;
+    uint32_t ack_received     = 0;
+    uint32_t erroneous_ack    = 0;
+    uint32_t out_of_order_ack = 0;
     ControlFrame ack;
     Receiver receiver = {
         .sockfd           = receiver_socket,
@@ -98,6 +101,13 @@ int main(int argc, char **argv) {
     pthread_create(&receiver.thread, NULL, receiver_function, &receiver);
 
     while (index < total_frames || sf != index) {
+        // If the timer is off, turn it on
+        if (timer_active == false) {
+            // Start the timer
+            timer_active = true;
+            expiry_time = get_deadline(timeout_ms);
+        }
+
         if (((sn - sf) & sw) < sw && index < total_frames) {
             // Enter MAC address, sequence number and CRC
             frame_buffer[index].header.seq_no = sn;
@@ -119,12 +129,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        // Check if the timer is active and if not, start it
-        if (timer_active == false) {
-            timer_active = true;
-            expiry_time = get_deadline(timeout_ms);
-        }
-
         // Check if the client is connected
         pthread_mutex_lock(&receiver.lock);
         if (receiver.client_connected == false) {
@@ -133,15 +137,20 @@ int main(int argc, char **argv) {
         }
 
         // Check if there is an ACK notification or not
-        if (receiver.rb.count > 0) {
+        while (receiver.rb.count > 0) {
             ack_received++;
             rb_pop_front(&receiver.rb, &ack);
             uint8_t diff = (ack.seq_no - sf) & sw;
             if (compute_crc32((uint8_t *) &ack, CONTROL_FRAME_SIZE) == 0 && diff > 0 && diff <= ((sn - sf) & sw)) {
-                printf("ACK %u received!\n", ack.seq_no);
-                sf = ack.seq_no;
+                if (diff > 0 && diff <= ((sn - sf) & sw)) {
+                    printf("ACK %u received!\n", ack.seq_no);
+                    sf = ack.seq_no;
+                } else {
+                    out_of_order_ack++;
+                    printf("Out-of-order ACK discarded! Seq no - %u!\n", ack.seq_no);
+                }
             } else {
-                ack_discarded++;
+                erroneous_ack++;
                 printf("Corrupted ACK discarded! Seq no - %u!\n", ack.seq_no);
             }
             // Stop the timer
@@ -170,16 +179,31 @@ int main(int argc, char **argv) {
     }
 
     // Print the statistics
-    printf("Total frames: %u\n", total_frames);
-    printf("Frames sent: %u\n", frames_sent);
-    printf("Acknowledgements received: %u\n", ack_received);
-    printf("Acknowledgements discarded: %u\n", ack_discarded);
+    double efficiency = (double) total_frames / (double) frames_sent;
+    fprintf(stderr, "Total frames: %u\n", total_frames);
+    fprintf(stderr, "Frames sent: %u\n", frames_sent);
+    fprintf(stderr, "Efficiency: %lf\n", efficiency);
+    fprintf(stderr, "ACKs received: %u\n", ack_received);
+    fprintf(stderr, "Erroneous ACKs: %u\n", erroneous_ack);
+    fprintf(stderr, "Out-of-order ACKs: %u\n", out_of_order_ack);
+
+    // Record the end time
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    nanoseconds = end.tv_nsec - start.tv_nsec;
+    seconds = end.tv_sec - start.tv_sec;
+
+    if (nanoseconds < 0) {
+        seconds--;
+        nanoseconds += 1000000000L;
+    }
+
+    total_ns = (seconds * 1000000000LL) + nanoseconds;
+    total_ms = (double) total_ns / 1000000.0;
+    fprintf(stderr, "Execution time: %.6f ms\n", total_ms);
 
     rb_free(&receiver.rb);
     pthread_join(receiver.thread, NULL);
     close(receiver_socket);
-    close(ack_pipe[READ_END]);
-    close(ack_pipe[WRITE_END]);
     free(frame_buffer);
 
     return 0;
