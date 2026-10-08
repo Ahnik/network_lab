@@ -13,6 +13,12 @@
 #define HEADER_SIZE         4        // Size of the header containing length
 #define CONTROL_FRAME_SIZE  6        // Size of an ACK frame
 
+// Control frame types for carrier sensing
+#define SENSE_REQ_TYPE       0x10
+#define SENSE_RESP_TYPE      0x11
+#define JAM_SIGNAL_TYPE      0x20
+#define COLLISION_ALERT_TYPE 0x21
+
 #define CRC32_GENERATOR 0x04C11DB7
 #define CRC_TABLE_SIZE (2 << 8)
 

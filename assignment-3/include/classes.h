@@ -7,8 +7,6 @@
 #include <random>
 #include <thread>
 
-using Distribution = std::uniform_int_distribution<int>;
-
 enum class ChannelState {
     IDLE = 0,
     BUSY,
@@ -39,8 +37,10 @@ struct TransmissionResult {
 };
 
 class BackoffEngine {
+    using Distribution = std::uniform_int_distribution<int>;
+    using Milliseconds = std::chrono::milliseconds;
 public:
-    BackoffEngine(const std::chrono::milliseconds& slotDuration, int maxAttempts = 16) 
+    BackoffEngine(const Milliseconds& slotDuration, int maxAttempts = 16) 
         : m_slotDuration(slotDuration), m_maxAttempts(maxAttempts), m_rng(std::random_device{}()), m_dist(Distribution(0, 1))
     {}
     BackoffEngine(const BackoffEngine&)            = delete;
@@ -53,7 +53,7 @@ public:
     void sleepUniform(int minSlots, int maxSlots);
 private:
     int m_attempts {0};
-    std::chrono::milliseconds m_slotDuration;
+    Milliseconds m_slotDuration;
     int m_maxAttempts;
     std::mt19937 m_rng;
     Distribution m_dist;
@@ -97,8 +97,11 @@ private:
 };
 
 class MacStrategy {
+protected:
+    using Milliseconds = std::chrono::milliseconds;
+    using SteadyClock  = std::chrono::steady_clock;
 public:
-    explicit MacStrategy(Strategy strategy, int maxAttempts = 16, std::chrono::milliseconds pollInterval = std::chrono::milliseconds(1))
+    explicit MacStrategy(Strategy strategy, int maxAttempts = 16, Milliseconds pollInterval = Milliseconds(1))
         : m_strategy(strategy), m_maxAttempts(maxAttempts), m_pollInterval(pollInterval)
     {}
     virtual ~MacStrategy()                         = default;
@@ -116,8 +119,8 @@ protected:
     TransmissionResult transmitFrameData(SocketWrapper& socket, BackoffEngine& backoffEngine, const Frame *frame);
 protected:
     Strategy m_strategy;
-    int m_maxAttempts;                              // Maximum retries
-    std::chrono::milliseconds m_pollInterval;       // Interval between carrier-sense checks
+    int m_maxAttempts;                 // Maximum retries
+    Milliseconds m_pollInterval;       // Interval between carrier-sense checks
 };
 
 #endif
