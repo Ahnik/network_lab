@@ -104,7 +104,6 @@ TransmissionResult PPersistent::executeTransmission(SocketWrapper& socket, Backo
     while (true) {
         // Carrier sensing
         ChannelState state = ChannelState::CHANNEL_STATES;
-        double q;
         while (true) {
             state = carrierSense(socket);
             if (state == ChannelState::BUSY || state == ChannelState::COLLISION)

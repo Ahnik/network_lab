@@ -106,7 +106,10 @@ TransmissionResult MacStrategy::transmitFrameData(SocketWrapper& socket, Backoff
         }
 
         ControlFrame finalAck;
-        if (recv(fd, &finalAck, sizeof(finalAck), 0) <= 0)
+        ssize_t ackBytes = recv(fd, &finalAck, sizeof(finalAck), 0);
+        if (ackBytes <= 0)
+            result.status = TransmissionStatus::SOCKET_ERROR;
+        else if (finalAck.frame_type == ACK_FRAME)
             result.status = TransmissionStatus::SUCCESS;
         else
             result.status = TransmissionStatus::DROPPED_COLLISION_LIMIT;

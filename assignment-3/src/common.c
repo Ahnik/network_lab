@@ -164,3 +164,13 @@ void inject_random_delay(int max_delay_ms) {
     ts.tv_nsec = (delay_ms % 1000) * 1000000L;
     nanosleep(&ts, NULL);
 }
+
+bool is_valid(const ControlFrame *frame) {
+    uint32_t received_fcs = (uint32_t) (frame->fcs[0] << 24) |
+                            (uint32_t) (frame->fcs[1] << 16) |
+                            (uint32_t) (frame->fcs[2] << 8)  |
+                            (uint32_t) (frame->fcs[3]);
+
+    uint32_t computed_fcs = compute_crc32((uint8_t *) &frame, CONTROL_FRAME_SIZE);
+    return (received_fcs == computed_fcs);
+}

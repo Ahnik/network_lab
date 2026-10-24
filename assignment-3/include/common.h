@@ -62,6 +62,10 @@ typedef struct {
 // Lookup table for calculating CRC-32
 static uint32_t crc32_table[CRC_TABLE_SIZE];
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Function to terminate the program in case of an error and print it
 void exit_with_error(const char *fmt, ...);
 
@@ -91,5 +95,12 @@ int receive_ack_with_timeout(ControlFrame *buffer, int receiver_socket, int time
 
 // Function to inject delay
 void inject_random_delay(int max_delay_ms);
+
+// Verify the FCS of the control frame
+bool is_valid(const ControlFrame *frame);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
