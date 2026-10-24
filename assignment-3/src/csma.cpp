@@ -158,6 +158,7 @@ TransmissionResult CsmaCd::executeTransmission(SocketWrapper& socket, BackoffEng
             switch (state) {
                 case ChannelState::BUSY:
                 case ChannelState::COLLISION:
+                    std::this_thread::sleep_for(m_pollInterval);
                     break;
                 case ChannelState::IDLE:
                     break;

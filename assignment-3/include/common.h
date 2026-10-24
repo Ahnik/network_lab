@@ -60,7 +60,7 @@ typedef struct {
 #pragma pack(pop)
 
 // Lookup table for calculating CRC-32
-static uint32_t crc32_table[CRC_TABLE_SIZE];
+extern uint32_t crc32_table[CRC_TABLE_SIZE];
 
 #ifdef __cplusplus
 extern "C" {

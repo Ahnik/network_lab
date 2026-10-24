@@ -11,6 +11,8 @@
 #include <poll.h>
 #include <time.h>
 
+uint32_t crc32_table[CRC_TABLE_SIZE];
+
 void exit_with_error(const char *fmt, ...) {
     int errno_save = errno;
     va_list ap;

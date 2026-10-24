@@ -299,6 +299,11 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    uint64_t totalAttemptsHandled = totalSuccessfulFrames + totalCollisions;
+    double channelEfficiency = (totalAttemptsHandled > 0)
+        ? (static_cast<double>(totalSuccessfulFrames) / totalAttemptsHandled * 100.0)
+        : 0.0;
+
     std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
     std::cout << "  CHANNEL EMULATOR SUMMARY REPORT\n";
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
@@ -306,6 +311,7 @@ int main(int argc, char* argv[]) {
     std::cout << "  Total Frames Successfully Delivered: " << totalSuccessfulFrames << "\n";
     std::cout << "  Total Collision Events: " << totalCollisions << "\n";
     std::cout << "  Total Jam Signals Handled: " << totalJamsReceived << "\n";
+    std::cout << "  Channel Efficiency: " << std::fixed << std::setprecision(2) << channelEfficiency << " %\n";
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
 
     for (auto& pfd : pollFds) {

@@ -50,6 +50,7 @@ ChannelState MacStrategy::carrierSense(SocketWrapper& socket) {
 }
 
 TransmissionResult MacStrategy::transmitFrameData(SocketWrapper& socket, BackoffEngine& backoffEngine, const Frame *frame) {
+    (void)backoffEngine;
     TransmissionResult result;
     int fd = socket.getFd();
     if (fd < 0 || frame == nullptr) {

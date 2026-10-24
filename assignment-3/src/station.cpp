@@ -169,23 +169,29 @@ int main(int argc, char* argv[]) {
     double throughput = (totalWallTimeMs > 0) 
         ? (static_cast<double>(delivered * FRAME_SIZE * 8) / (totalWallTimeMs / 1000.0)) // bits per sec
         : 0.0;
+    double efficiency = (totalAttempts > 0)
+        ? (static_cast<double>(delivered) / totalAttempts * 100.0) // transmission efficiency %
+        : 0.0;
 
     // 6. Output Statistics
     std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
     std::cout << "  STATION " << stationId << " SUMMARY REPORT (" << strategyStr << ")\n";
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-    std::cout << "  Frames Attempted:   " << frames.size() << "\n";
-    std::cout << "  Frames Delivered:   " << delivered << "\n";
-    std::cout << "  Frames Dropped:     " << dropped << "\n";
-    std::cout << "  Total Collisions:   " << totalCollisions << "\n";
-    std::cout << "  Average Delay:      " << std::fixed << std::setprecision(2) << avgDelayMs << " ms\n";
-    std::cout << "  Throughput:         " << std::fixed << std::setprecision(2) << throughput << " bps\n";
+    std::cout << "  Frames Attempted:       " << frames.size() << "\n";
+    std::cout << "  Frames Delivered:       " << delivered << "\n";
+    std::cout << "  Frames Dropped:         " << dropped << "\n";
+    std::cout << "  Total Collisions:       " << totalCollisions << "\n";
+    std::cout << "  Total Tx Attempts:      " << totalAttempts << "\n";
+    std::cout << "  Average Delay:          " << std::fixed << std::setprecision(2) << avgDelayMs << " ms\n";
+    std::cout << "  Throughput:             " << std::fixed << std::setprecision(2) << throughput << " bps\n";
+    std::cout << "  Transmission Efficiency:" << std::fixed << std::setprecision(2) << efficiency << " %\n";
     std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
 
     // Structured CSV log for automated parsing
     std::cout << "CSV_METRICS," << stationId << "," << strategyStr << "," << pVal << "," 
               << frames.size() << "," << delivered << "," << dropped << "," 
-              << totalCollisions << "," << avgDelayMs << "," << throughput << "\n";
+              << totalCollisions << "," << totalAttempts << "," << avgDelayMs << "," 
+              << throughput << "," << efficiency << "\n";
 
     return 0;
 }
