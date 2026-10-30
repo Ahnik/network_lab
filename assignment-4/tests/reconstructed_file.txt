@@ -1,0 +1,6 @@
+Computer Networks Laboratory (CSE/PC/B/S/314)
+Assignment 4: Code Division Multiple Access (CDMA) with Walsh-Hadamard Codes.
+This file is being transmitted across the CDMA channel.
+Multiple stations transmit simultaneously without collisions!
+Each station encodes its bits using its orthogonal Walsh code.
+The receiver perfectly reconstructs the data using inner products.

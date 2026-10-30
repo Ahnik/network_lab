@@ -91,8 +91,6 @@ int main(int argc, char **argv) {
                     printf("Frame #%u received! Seq no - %d!\n", index+1, frame_buffer[index].header.seq_no);
                     rn = (rn + 1) & max_seq_no;
                     index++;
-                } else {
-
                 }
             } else {
                 corrupt_frames++;
